@@ -1,0 +1,12 @@
+addpath('./ResSim');
+startMRSTmodules;
+Nx = 11;
+perm = 10.0 * ones(Nx^2,1);
+obj = FOM(perm);
+obj = obj.makeSnapshots();
+[U,S,V,Nr] = obj.makePOD(0.8);
+Ur = U(:,1:Nr);
+reconstruct = obj.snapshots(:,1);
+reconstruct = Ur'*reconstruct;
+sol = Ur * reconstruct;
+delta = sol - obj.snapshots(:,1);
