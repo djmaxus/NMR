@@ -7,29 +7,44 @@ dataset = dataset - mu;
 [U,S,V] = svd(dataset);
 %% set gap parameters
 % unmarred fraction
-p = 0.1;
+p = 0.3;
 % unmarred number
 n_unmarred = round(p * size(dataset,1));
-num_eig_keep = 30;
 %% set up masks
 i_unmarred = randi([1,size(dataset,1)],n_unmarred,size(dataset,2));
-mask = makeMask(dataset,n_unmarred);
+mask = full(makeMask(dataset,n_unmarred));
 data_masked = dataset .* mask;
 %% marred average
-semilogy(diag(S));
+diagS = diag(S);
+Nt = eigEnNum(diagS,0.9);
+semilogy(diagS(1:Nt));
 mu_masked = sum(data_masked,2)./ (sum(mask,2) + eq(sum(mask,2),0));
 data_masked = data_masked .* eq(mask,1) + eq(mask,0) .* mu_masked;
 max_iter = 20;
 for num_iter = 1:max_iter
-    [Um,Sm,Vm] = svd(data_masked);
+    [Um,Sm,~] = svd(data_masked);
     hold on;
-    semilogy(diag(Sm));
+    diagS = diag(Sm);
+    %     Nt = eigEnNum(diagS,0.8);
+    semilogy(diagS);
     %% least squares problem
-    A =  Um(:,1:num_eig_keep);
+    A =  Um(:,1:Nt);
     a = A'*data_masked;
+    for j = 1:size(data_masked,2)
+        M = maskMatrix(mask(:,j));
+        B = data_masked(:,j);
+        x = lscov(M*A,M*B);
+        delta = norm(x - a(:,j));
+        a(:,j) = x;
+    end
+    
     %%
     data_masked = data_masked .* eq(mask,1) + eq(mask,0) .* (A*a);
 end
+figure; 
+histogram(dataset(:,1),50);
+hold on;
+histogram(data_masked(:,1),50);
 %% check if entry is non-unique in array
 function [flag] = is_repeat(entry_index,array)
 sum_left = sum(eq(array(entry_index),array(1:entry_index-1)));
@@ -39,7 +54,7 @@ end
 
 %% calculate mask
 function mask = makeMask(dataset,n_unmarred)
-mask = zeros(size(dataset));
+mask = spalloc(size(dataset,1),size(dataset,2),size(dataset,2)*n_unmarred);
 i_unmarred = randi([1,size(dataset,1)],n_unmarred,size(dataset,2));
 for i = 1:size(dataset,2)
     for j = 2:n_unmarred
@@ -52,12 +67,21 @@ for i = 1:size(dataset,2)
 end
 end
 function out = maskMatrix(mask)
-    out = zeros(sum(mask,1),size(mask,1));
-    pos = 1;
-    for i = 1:size(mask,1)
-        if mask(i) == 1
-            out(pos,i) = 1;
-            pos = pos + 1;
-        end
+out = spalloc(sum(mask,1),size(mask,1),sum(mask,1));
+pos = 1;
+for i = 1:size(mask,1)
+    if mask(i) == 1
+        out(pos,i) = 1;
+        pos = pos + 1;
     end
+end
+end
+function out = eigEnNum(S,fraction)
+total = sum(S);
+for i = 1:length(S)
+    if sum(S(1:i)) >= fraction * total
+        out = i;
+        break;
+    end
+end
 end
