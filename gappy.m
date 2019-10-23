@@ -1,12 +1,10 @@
 %% load dataset
-load 'data/gauss60_5+';
-
+% load 'data/gauss60_5+';
+load 'data/misformax';
+dataset = m;
 %% normalize dataset
 mu = mean(dataset,2);
 dataset = dataset - mu;
-d_min = min(dataset,[],'all');
-d_max = max(dataset,[],'all');
-dataset = (dataset - d_min) ./ (d_max - d_min);
 
 %% split dataset
 i_test = randi([1,size(dataset,2)],10,1);
@@ -33,7 +31,7 @@ subplot(1,2,2);
 semilogy(diagS(1:end-1));
 %% set gap parameters
 % unmarred fraction
-p = 0.4;
+p = 0.1;
 % unmarred number
 n_unmarred = round(p * size(train,1));
 
@@ -73,6 +71,33 @@ imagesc(reshape(out,60,60));
 subplot(2,1,2);
 out = data_masked(:,1);
 imagesc(reshape(out,60,60));
+%% repair test fields by unmarried train data
+A = U(:,1:Nt);
+a = zeros(Nt,1);
+B = test(:,1);
+MM = maskMatrix(mask_test(:,1));
+
+x = lscov(MM*A,MM*B);
+a(:,j) = x;
+restored = A * x;
+figure;
+subplot(2,1,1);
+out = test(:,1);
+imagesc(reshape(out,60,60));
+subplot(2,1,2);
+out = restored(:,1);
+imagesc(reshape(out,60,60));
+%% oblique projection
+P = MM';
+A = U(:,1:Nt);
+PP = P'*A;
+[Up,Sp,Vp] = svd(PP);
+Spp = zeros(size(Sp'));
+dSp = diag(Sp);
+dSp = eye(length(dSp))./ dSp;
+Spp(1:end,1:length(dSp))= dSp;
+PPp = Vp * Spp * Up';
+ObProj = A * PPp * P';
 %% check if entry is non-unique in array
 function [flag] = is_repeat(entry_index,array)
 sum_left = sum(eq(array(entry_index),array(1:entry_index-1)));
