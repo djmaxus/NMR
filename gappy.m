@@ -33,7 +33,7 @@ subplot(1,2,2);
 semilogy(diagS(1:end-1));
 %% set gap parameters
 % unmarred fraction
-p = 0.5;
+p = 0.4;
 % unmarred number
 n_unmarred = round(p * size(train,1));
 
