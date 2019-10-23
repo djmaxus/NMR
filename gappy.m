@@ -1,43 +1,60 @@
 %% load dataset
 load 'data/gauss60_5+';
+
 %% normalize dataset
 mu = mean(dataset,2);
 dataset = dataset - mu;
 d_min = min(dataset,[],'all');
 d_max = max(dataset,[],'all');
 dataset = (dataset - d_min) ./ (d_max - d_min);
-%% perform SVD
-% [U,S,V] = svd(cov(dataset'));
-[U,S,V] = svd(dataset);
-diagS = diag(S);
-Ntf = eigEnNum(diagS,0.9);figure;
-semilogy(diagS(1:Ntf));
 
+%% split dataset
+i_test = randi([1,size(dataset,2)],10,1);
+i_test = sort(unique(i_test));
+test = zeros(size(dataset,1),length(i_test));
+train = dataset;
+for i = 1:length(i_test)
+    test(:,i) = dataset(:,i_test(i));
+    train(:,i_test(i)-i) = [];
+end
+%% perform SVD
+[U,S,V] = svd(train);
+%% mean squared error
+figure;
+subplot(1,2,1);
+semilogy(MSE(U,S,train));
+hold on;
+semilogy(MSE(U,S,test));
+
+%% spectrum
+diagS = diag(S);
+Nt = eigEnNum(diagS,0.9);
+subplot(1,2,2);
+semilogy(diagS(1:end-1));
 %% set gap parameters
 % unmarred fraction
 p = 0.5;
 % unmarred number
-n_unmarred = round(p * size(dataset,1));
+n_unmarred = round(p * size(train,1));
 
 %% set up masks
-mask = makeMask(dataset,n_unmarred);
-for j = 1:size(data_masked,2)
+mask = makeMask(train,n_unmarred);
+mask_test = makeMask(test,n_unmarred);
+for j = 1:size(train,2)
     M{j} = maskMatrix(mask(:,j));
 end
-
 %% marred average
-data_masked = dataset .* mask;
+data_masked = train .* mask;
 mu_masked = sum(data_masked,2)./ (sum(mask,2) + eq(sum(mask,2),0));
 data_masked = data_masked .* eq(mask,1) + eq(mask,0) .* mu_masked;
 
-max_iter = 10;
+%% iterations
+max_iter = 20;
 for num_iter = 1:max_iter
     [Um,Sm,~] = svd(data_masked);
     hold on;
     diagS = diag(Sm);
-    Nt = eigEnNum(diagS,0.9);
-%     Nt = 30;
-    semilogy(diagS(1:Ntf));
+    f = semilogy(diagS(1:end-1));
     %% least squares problem
     A =  Um(:,1:Nt);
     a = zeros(Nt,size(data_masked,2));
@@ -47,10 +64,15 @@ for num_iter = 1:max_iter
         a(:,j) = x;
     end
     
-    %%
     data_masked = data_masked .* eq(mask,1) + eq(mask,0) .* (A*a);
 end
-
+figure;
+subplot(2,1,1);
+out = dataset(:,1);
+imagesc(reshape(out,60,60));
+subplot(2,1,2);
+out = data_masked(:,1);
+imagesc(reshape(out,60,60));
 %% check if entry is non-unique in array
 function [flag] = is_repeat(entry_index,array)
 sum_left = sum(eq(array(entry_index),array(1:entry_index-1)));
@@ -90,4 +112,18 @@ for i = 1:length(S)
         break;
     end
 end
+end
+function [out] = MSE(U,S,data)
+out = zeros(1,size(S,2));
+for n = 1:size(S,2)-1
+    A = U(:,1:n);
+    restore = A * A' * data;
+    delta = data - restore;
+    delta = sum(delta.^2,'all')/numel(data);
+    out(n) = delta;
+end
+end
+function [M,F] = calcMF(data,U)
+    M = U' * U;
+    F = U' * data;
 end
