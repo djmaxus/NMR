@@ -129,15 +129,7 @@ for i = 1:size(mask,1)
     end
 end
 end
-function out = eigEnNum(S,fraction)
-total = sum(S);
-for i = 1:length(S)
-    if sum(S(1:i)) >= fraction * total
-        out = i;
-        break;
-    end
-end
-end
+
 function [out] = MSE(U,S,data)
 out = zeros(1,size(S,2));
 for n = 1:size(S,2)-1
