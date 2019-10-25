@@ -7,7 +7,8 @@ for n = 1:size(S,2)-1
     A = U(:,1:n);
     restore = A * A' * data;
     delta = data - restore;
-    delta = sum(delta.^2,'all')/numel(data);
+    delta = diag(delta'*delta);
+    delta = sum(delta)/length(delta);
     out(n) = delta;
 end
 close(wb);
