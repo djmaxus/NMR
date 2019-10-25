@@ -18,7 +18,7 @@ pause(1);
 %% train/test split
 data = splitTrainTest(dataset,0.1);
 %% POD
-POD = makePOD(data.train,0.8);
+POD = makePOD(data.train,0.9);
 %% set up random masks
 mask.frac = 0.1;
 mask.num = round(mask.frac * size(data.test,1));
