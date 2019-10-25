@@ -79,22 +79,14 @@ classdef FOM
             [data, res] = simulateScheduleAD(obj.state0, model,schedule);
         end
         function obj = makeSnapshots(obj)
-            obj.snapshots = [];
-            min_val = [obj.res_sol{1}.pressure(1);obj.res_sol{1}.s(1,2)];
-            max_val = min_val;
-            Nt =length(obj.res_sol);
-            Nc = length(stamp.pressure);
-            for t = 1:length(obj.res_sol)
-                stamp = obj.res_sol{t};
-                snapshot = [];
-                for i = 1:length(stamp.pressure)
-                    val = [stamp.pressure(i);stamp.s(i,2)];
-                    max_val = max(max_val,val);
-                    min_val = min(min_val,val);
-                    snapshot = [snapshot;val];
-                end
-                obj.snapshots = [obj.snapshots,snapshot];
+            data = zeros(obj.G.cells.num*2,length(obj.res_sol));
+            for i = 1:length(obj.res_sol)
+                item = obj.res_sol{i};
+                vec = item.pressure;
+                vec = [vec;item.s(:,2)];
+                data(:,i) = vec;
             end
+            obj.snapshots = data; 
         end
         function [U,S,V,Nr] = makePOD(obj,w)
             [U,S,V] = svd(obj.snapshots);
