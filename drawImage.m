@@ -5,5 +5,6 @@ function [] = drawImage(data,fig)
     colormap 'jet';
     colorbar;
     caxis([0 1]);
+    axis square;
 end
 

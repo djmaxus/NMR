@@ -47,9 +47,9 @@ close(wb);
 compPlot(data.test,data.masked,data.restored,1);
 pause(1);
 %% greedy masks
-grd.num = POD.N;
+grd.num = size(POD.S,2);
 grd.frac = grd.num/size(data.test,1);
-grd.P.test = greedy(POD.Ut);
+grd.P.test = greedy(POD.U(:,1:grd.num));
 grd.test = sum(grd.P.test,2);
 data.masked_grd.test = data.test .* grd.test;
 POD.Ogrd.test = oblique(grd.P.test,POD.Ut);
