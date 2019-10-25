@@ -59,7 +59,7 @@ function [problem] = fivePoint(perm)
     problem.well = well;
     %% time
     time.T = 10;
-    time.step = 120;
+    time.step = 60;
     
     problem.time = time;
     
