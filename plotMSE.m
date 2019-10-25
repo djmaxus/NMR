@@ -5,10 +5,14 @@ function [] = plotMSE(data,POD,mask,grd)
     out.test = calcMSE(POD.U,POD.S,data.test);
     
     delta = data.test - data.restored.test;
-    out.restored = sum(delta .^ 2,'all')/numel(data.test);
+    delta = diag(delta'*delta);
+    delta = sum(delta)/length(delta);
+    out.restored = delta;
     
     delta = data.test - data.res_grd.test;
-    out.grd = sum(delta .^ 2,'all')/numel(data.test);
+    delta = diag(delta'*delta);
+    delta = sum(delta)/length(delta);
+    out.grd = delta;
     
     f = figure;
     f.WindowState = 'maximized';
@@ -26,7 +30,7 @@ function [] = plotMSE(data,POD,mask,grd)
     hold on;
     xline(POD.N);
     
-    title('Mean Square Error');
+    title('Mean Squared Error');
     legend('train','test',['restored, p = ',num2str(mask.frac)],...
                           ['greedy p = ',num2str(grd.frac)]);
     xlabel('Number of POD components');
