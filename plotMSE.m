@@ -21,8 +21,8 @@ function [] = plotMSE(data,POD,mask,grd)
     hold on;
     semilogy(out.test);
     
-    hold on;
-    semilogy(abs(out.test-out.train));
+%     hold on;
+%     semilogy(abs(out.test-out.train));
     
     hold on;
     plot(POD.N,out.restored,'o');
@@ -34,7 +34,7 @@ function [] = plotMSE(data,POD,mask,grd)
     xline(POD.N);
     
     title('Mean Squared Error');
-    legend('train','test','MSE difference',...
+    legend('train','test',...
         ['restored, p = ',num2str(mask.frac)],...
         ['greedy, p = ',num2str(grd.frac)]);
     xlabel('Number of POD components');

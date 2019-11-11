@@ -12,12 +12,27 @@ dataset = (dataset - val_min) / (val_max - val_min);
 %% draw example
 f = figure;
 f.WindowState = 'maximized';
-drawImage(dataset(:,1),f);
+train_index = randi([1,size(dataset,2)],1,1);
+drawImage(dataset(:,train_index),f,'jet');
 title('A field sample from dataset');
 waitforbuttonpress;
 %% train/test split
 uiwait(msgbox('Split to train/test','','modal'));
 data = splitTrainTest(dataset,0.1);
+close(f);
+f = figure;
+f.WindowState = 'maximized';
+
+subplot(1,2,1);
+train_index = randi([1,size(data.train,2)],1,1);
+drawImage(data.train(:,train_index),f,'jet');
+title(['Train sample: ',num2str(train_index),' of ',num2str(size(data.train,2))]);
+
+subplot(1,2,2);
+test_index = randi([1,size(data.test,2)],1,1);
+drawImage(data.train(:,test_index),f,'jet');
+title(['Test sample: ',num2str(test_index),' of ',num2str(size(data.test,2))]);
+waitforbuttonpress;
 %% POD
 uiwait(msgbox('Calculate POD','','modal'));
 POD = makePOD(data.train,0.9);
@@ -33,7 +48,8 @@ end
 mask.label = 'mask';
 data.masked.test = data.test .* mask.test;
 data.masked.label = 'gappy';
-compPlot(data.test,mask,data.masked,1);
+test_index = randi([1,size(data.test,2)],1,1);
+compPlot(data.test,mask,data.masked,test_index);
 waitforbuttonpress;
 %% oblique projection
 uiwait(msgbox('Calculate oblique projections','','modal'));
@@ -43,9 +59,9 @@ for i = 1:size(data.test,2)
     waitbar(i/size(data.test,2),wb);
     POD.O.test{i} = oblique(mask.P.test{i},POD.Ut);
 end
+waitfor(wb);
 %% restore fields
-uiwait(msgbox('Reconstruct data','','modal'));
-waitbar(0,wb,'Reconstruction');
+wb = waitbar(0,'Reconstruction');
 data.restored.test = zeros(size(data.test));
 for i = 1:size(data.test,2)
     waitbar(i/size(data.test,2),wb);
@@ -54,7 +70,8 @@ end
 data.restored.label = 'reconstructed';
 waitbar(1,wb,'Close and look what we got!');
 waitfor(wb);
-compPlot(data.test,data.masked,data.restored,1);
+
+compPlot(data.test,data.masked,data.restored,test_index);
 waitforbuttonpress;
 %% greedy masks
 uiwait(msgbox('Want a better mask?','','modal'));
@@ -75,8 +92,9 @@ end
 data.res_grd.label = 'reconstructed (greedy)';
 waitbar(1,wb,'Close and look what we got!');
 waitfor(wb);
-compPlot(data.test,data.masked_grd,data.res_grd,1);
+compPlot(data.test,data.masked_grd,data.res_grd,test_index);
 %% draw MSE
-% plotMSE(data,POD,mask,grd);
+waitforbuttonpress;
+plotMSE(data,POD,mask,grd);
 
 

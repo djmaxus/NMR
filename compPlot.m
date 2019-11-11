@@ -6,15 +6,15 @@ function [] = compPlot(data,masked,restored,index)
     fig.WindowState = 'maximized';
     
     subplot(1,3,1);
-    drawImage(data(:,index),fig);
+    drawImage(data(:,index),fig,'jet');
     title([sample_name,': ','original']);
     
-    subplot(1,3,2);
-    drawImage(masked.test(:,index),fig);
+    a = subplot(1,3,2);
+    drawImage(masked.test(:,index), a,'gray');
     title([sample_name,': ',masked.label]);
     
     subplot(1,3,3);
-    drawImage(restored.test(:,index),fig);
+    drawImage(restored.test(:,index),fig,'jet');
     title([sample_name,': ',restored.label]);
 end
 
