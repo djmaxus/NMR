@@ -5,6 +5,7 @@ function [P] = greedy(basis)
 V = basis(:,1);
 P = zeros(size(V)); 
 P(i) = 1;
+wb = waitbar(0,'Greedy sampling');
 for j = 2:size(basis,2)
     c = (P'*V)\(P'*basis(:,j));
     r = basis(:,j) - V*c;
@@ -13,6 +14,10 @@ for j = 2:size(basis,2)
     dP(i) = 1;
     P = [P,dP];
     V = [V,basis(:,j)];
+    progress =(j-1)/(size(basis,2)-1);
+    waitbar(progress,wb);
 end
+waitbar(1,wb,'Greedy sampling: done');
+waitfor(wb);
 end
 

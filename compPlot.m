@@ -7,14 +7,14 @@ function [] = compPlot(data,masked,restored,index)
     
     subplot(1,3,1);
     drawImage(data(:,index),fig);
-    title([sample_name,': true image']);
+    title([sample_name,': ','original']);
     
     subplot(1,3,2);
     drawImage(masked.test(:,index),fig);
-    title([sample_name,': masked']);
+    title([sample_name,': ',masked.label]);
     
     subplot(1,3,3);
     drawImage(restored.test(:,index),fig);
-    title([sample_name,': reconstructed']);
+    title([sample_name,': ',restored.label]);
 end
 
