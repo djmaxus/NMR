@@ -1,7 +1,7 @@
 classdef FOM
     %COSTOBJECT Summary of this class goes here
     %   Detailed explanation goes here
-    
+
     properties
         well_sol;
         res_sol;
@@ -12,8 +12,10 @@ classdef FOM
         dt;
         state0;
         snapshots;
+        var_pod;
+        res_pod;
     end
-    
+
     methods
         function obj = FOM(X)
             %COSTOBJECT Construct an instance of this class
@@ -23,15 +25,15 @@ classdef FOM
             %% init computational grid
             obj.G = cartGrid(problem.grid.N, problem.grid.L * meter());
             obj.G = computeGeometry(obj.G);
-            
+
             %% init fluid
             obj.fluid = initSimpleADIFluid('phases',problem.fluid.phases,...
                 'mu',problem.fluid.mu * centi() *poise(),...
                 'rho',problem.fluid.rho * kilogram() / meter()^3,...
                 'c',problem.fluid.c / barsa(),...
                 'cR',problem.rock.cR / barsa(),...
-                'pRef',problem.pRef * barsa()); 
-            
+                'pRef',problem.pRef * barsa());
+
             %% set boundary condition
             bc = struct([]);
             bc = fluxside(bc,obj.G,'left',0,'sat',[0,0]);
@@ -41,16 +43,16 @@ classdef FOM
             bc = fluxside(bc,obj.G,'bottom',0,'sat',[0,0]);
             bc = fluxside(bc,obj.G,'top',0,'sat',[0,0]);
             obj.bc = bc;
-            
+
             %% init time
             T = problem.time.T * year();
             obj.dt = rampupTimesteps(T,problem.time.step*day(),0);
-            
+
             %% set initial condition
             P0 = problem.init.P * barsa();
             S0 = [1 - problem.init.S, problem.init.S];
             obj.state0 = initResSol(obj.G,P0,S0);
-            
+
             %% get hist data
             [obj.well_sol, obj.res_sol] = obj.solve(X);
         end
@@ -78,15 +80,29 @@ classdef FOM
             disp('');
             [data, res] = simulateScheduleAD(obj.state0, model,schedule);
         end
-        function obj = makeSnapshots(obj)
-            data = zeros(obj.G.cells.num*2,length(obj.res_sol));
-            for i = 1:length(obj.res_sol)
-                item = obj.res_sol{i};
-                vec = item.pressure;
-                vec = [vec;item.s(:,2)];
-                data(:,i) = vec;
+        function obj = makeSnapshots(obj, param_points)
+            out = cell(length(param_points),1);
+            for i = 1:length(param_points)
+                out{i} = struct();
+                [out{i}.res_state, out{i}.well_state] = obj.solve(param_points{i});
             end
-            obj.snapshots = data; 
+            obj.snapshots = out;
+        end
+        function obj = makeVarPOD(obj,energy)
+            % build sample matrix
+            var_data = [];
+            for i=1:obj.snapshots
+                % get field var vector
+                var_evol = [];
+                for j = 1:length(obj.snapshots{i})
+                    var_step = obj.snapshots{i}.pres;
+                    var_evol = [var_evol,var_step];
+                end
+                % add to matrix
+                var_data = [var_data,var_evol];
+            end
+            % make POD
+            obj.var_pod = makePOD(var_data,energy);
         end
         function [U,S,V,Nr] = makePOD(obj,w)
             [U,S,V] = svd(obj.snapshots);
@@ -110,7 +126,7 @@ classdef FOM
             [data, ~] = obj.solve(X);
             cost = obj.getCost(data);
         end
-        
+
         function [cost] = getCost(obj,data)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
@@ -123,16 +139,16 @@ classdef FOM
                 for w = 1:Wn
                     well = step{1}(w);
                     well_hist = step_hist{1}(w);
-                    
+
                     flux = well.flux;
                     bhp = well.bhp;
                     flux_hist = well_hist.flux;
                     bhp_hist = well_hist.bhp;
-                    
+
                     sol = [flux,bhp];
                     sol_hist = [flux_hist,bhp_hist];
                     Sn = length(sol);
-                    denom = Tn * Wn * Sn; 
+                    denom = Tn * Wn * Sn;
                     denom = denom + eq(denom,0);
                     weight = 1./(sol_hist.^2 .* ne(sol_hist,0) + eq(sol_hist,0));
                     delta = (sol - sol_hist).^2 .* weight ./denom;
@@ -145,4 +161,3 @@ classdef FOM
         end
     end
 end
-
