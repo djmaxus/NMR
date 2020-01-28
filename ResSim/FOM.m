@@ -76,8 +76,6 @@ classdef FOM
             end
             %% init schedule
             schedule = simpleSchedule(obj.dt,'W',well,'bc',obj.bc);
-            disp('Simulating...');
-            disp('');
             [data, res] = simulateScheduleAD(obj.state0, model,schedule);
         end
         function obj = makeSnapshots(obj, param_points)
@@ -103,22 +101,6 @@ classdef FOM
             end
             % make POD
             obj.var_pod = makePOD(var_data,energy);
-        end
-        function [U,S,V,Nr] = makePOD(obj,w)
-            [U,S,V] = svd(obj.snapshots);
-            energy = diag(S).^2;
-            total_energy = sum(energy);
-            fraction = 0;
-            for i = 1:length(energy)
-                fraction = fraction + energy(i)/total_energy;
-                if fraction >= w
-                    Nr = i;
-                    break;
-                end
-            end
-        end
-        function plot_solution(obj,res)
-            plotCellData(obj.G, res{end}.s(:,1));
         end
         function [data,cost] = calc(obj,X)
             %METHOD1 Summary of this method goes here
