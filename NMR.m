@@ -3,7 +3,7 @@ addpath('./POD');
 clear all;
 close all;
 clc;
-Nx = 500;
+Nx = 100;
 Nt = Nx;
 D = 100*ones(Nx+1,1)./Nx;
 bc = [2,2];
