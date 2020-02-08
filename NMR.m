@@ -81,11 +81,12 @@ while t < 1
         end
         [Jt,Jx] = buildJacobian(X,dt,D,mask);
         % oblique projection
-        J = diag(Jt) + O*Jx;
-        % GP
+        J = diag(Jt) + O * Jx;
+        % G
         P = POD.X.U;
         % LSPG
         P = J * P;
+        % projection
         J = P' * J;
         R = P' * R;
         % Y derivative
