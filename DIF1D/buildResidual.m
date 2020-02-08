@@ -15,6 +15,7 @@ function [Rt,Rx] = buildResidual(X,dt,D,bc,mask)
 end
 
 function [R] = calcFlux(X,D,bc,i)
+    N = length(X);
     if i==1
         R = bc(1);
     elseif i==N+1
