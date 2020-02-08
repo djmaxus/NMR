@@ -22,6 +22,6 @@ function [R] = calcFlux(X,D,bc,i)
         R = bc(2);
     else
         x = max(X(i),X(i-1));
-        R = D( i ) * x^2 * ( X( i ) - X( i - 1 ) );
+        R = -D( i ) * x^2 * ( X( i ) - X( i - 1 ) );
     end
 end
