@@ -4,7 +4,7 @@ Nx = 10;
 Nt = 10;
 D = ones(Nx-1,1);
 bc = [1,1];
-
+%% perform FOM
 dt = 1/Nt;
 t = 0;
 X = ones(Nx,2);
@@ -32,59 +32,57 @@ while t < 1
         dX = J \ (-R);
         X(:,2) = X(:,2) + dX;
     end
-    if dt < 1e-6
+    if dt < 1/Nt
         break;
     end
 end
 FOM.sol = sol;
-%% make POD and estimate quality
+
+%% preform model reduction
+% X POD
 POD.X = makePOD(sol.X,0.9);
 MSE.X = calcMSE(POD.X.U,POD.X.S,sol.X);
 semilogy(MSE.X);
-
+% Residual POD
 POD.Rx = makePOD(sol.Rx,0.9);
 MSE.Rx = calcMSE(POD.Rx.U,POD.Rx.S,sol.Rx);
 semilogy(MSE.X);
-
 % greedy mask
 mask = greedy(POD.Rx.U);
-
 %oblique projector
 O = oblique(maskMatrix(mask),POD.Rx.U);
 
+%% perform ROM
 delete sol;
-
 dt = 1/Nt;
 t = 0;
 X = ones(Nx,2);
 Y = POD.X.U' * X;
 sol.t(1) = t;
-sol.Y = Y(:,2);
-[~,sol.Rx] = buildResidual(X,dt,D,bc,mask);
+sol.X = X(:,2);
 while t < 1
     Y(:,2) = Y(:,1);
     for k = 1:kmax
         X = POD.X.U*Y;
         [Rt,Rx] = buildResidual(X,dt,D,bc,mask);
-        % oblique projection
+        % residual oblique projection
         R = Rt + O * Rx;
         if max(abs(R)) <= epsilon
             t = t+dt;
             Y(:,1) = Y(:,2);
             sol.t = [sol.t,t];
-            sol.Y = [sol.Y,Y(:,2)];
-            sol.Rx = [sol.Rx, Rx];
+            sol.X = [sol.X,X(:,2)];
             break;
         elseif k == kmax
             dt = dt / 4;
             break;
         end
         [Jt,Jx] = buildJacobian(X,dt,D,mask);
-        % oblique projection
+        % jacobian oblique projector
         J = diag(Jt) + O * Jx;
-        % G
+        % Galerkin
         P = POD.X.U;
-        % LSPG
+        % Least squares Petrov – Galerkin projector
         P = J * P;
         % projection
         J = P' * J;
@@ -94,8 +92,8 @@ while t < 1
         dY = J \ (-R);
         Y(:,2) = Y(:,2) + dY;
     end
-    if dt < 1e-6
+    if dt < 1/Nt
         break;
     end
 end
-FOM.sol = sol;
+ROM.sol = sol;
