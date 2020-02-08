@@ -32,7 +32,7 @@ function [J] = calcFlux(X,D,i)
         x = max(X(i),X(i-1));
         imax = eq(x,X(i-1)) + eq(x,X(i))*2;
         for j=1:2
-            J( j ) = D( i ) * (2 * x * eq( imax, j ) * (X( i ) - X( i - 1 )) + x ^ 2 * (eq( j, 2 ) - eq( j, 1 )));
+            J( j ) = -D( i ) * (2 * x * eq( imax, j ) * (X( i ) - X( i - 1 )) + x ^ 2 * (eq( j, 2 ) - eq( j, 1 )));
         end
     end
 end
