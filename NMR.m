@@ -4,14 +4,15 @@ clear all;
 close all;
 clc;
 Nx = 100;
-Nt = 10;
-D = 10*ones(Nx+1,1)./Nx;
-bc = [2,1];
+Nt = Nx;
+D = 100*ones(Nx+1,1)./Nx;
+bc = [2,2];
 kmax = 8;
 %% perform FOM
 dt = 1/Nt;
 t = 0;
-X0 = sin(2*pi*(1:Nx)'./Nx);
+X0 = ones(Nx,1);
+% X0 = sin(2*pi*(1:Nx)'./Nx);
 X = [X0,X0];
 sol.t(1) = t;
 sol.X = X(:,1);
@@ -45,7 +46,7 @@ while t < 1
         end
         X(:,2) = X(:,2) + dX;
     end
-    if dt < 1e-6
+    if dt < 1e-5
         break;
     end
 end
@@ -62,6 +63,10 @@ POD.Rx = makePOD(sol.Rx,0.99);
 % semilogy(MSE.X);
 % greedy mask
 mask = greedy(POD.Rx.U);
+frac = 0.1;
+Nm = round(frac*size(mask,2));
+Nm = max(Nm,POD.Rx.N);
+mask = mask(:,1:Nm);
 %oblique projector
 O = oblique(mask,POD.Rx.Ut);
 out = [];
@@ -75,7 +80,7 @@ for i = 1:size(mask,2)
 end
 mask = out;
 %% perform ROM
-delete sol;
+clear sol;
 dt = 1/Nt;
 t = 0;
 X = [X0,X0];
@@ -89,8 +94,8 @@ while t < 1
         [Rt,Rx] = buildResidual(X,dt,D,bc,mask);
         % residual oblique projection
         R = Rt + O * Rx;
-        Rt = POD.X.Ut'*R;
-        if max(abs(Rt)) <= 1e-8
+        Rr = POD.X.Ut'*R;
+        if max(abs(Rr)) <= 1e-8
             t = t+dt;
             Y(:,1) = Y(:,2);
             sol.t = [sol.t,t];
@@ -109,7 +114,7 @@ while t < 1
         % Galerkin
         P = POD.X.Ut;
         % Least squares Petrov – Galerkin projector
-        P = J * P;
+%         P = J * P;
         % projection
         J = P' * J;
         R = P' * R;
@@ -118,7 +123,7 @@ while t < 1
         dY = J \ (-R);
         Y(:,2) = Y(:,2) + dY;
     end
-    if dt < 1e-6
+    if dt < 1e-5
         break;
     end
 end
