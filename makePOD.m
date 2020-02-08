@@ -8,16 +8,19 @@ function [POD] = makePOD(data, frac_energy)
     data = data - POD.init;
 
     %% Substract mean
-    POD.mu = mean(data,2);
+    POD.mu = 0;
+%     POD.mu = mean(data,2);
     data = data - POD.mu;
-    disp(mean(data,2));
 
     %% Divide by variation
-    POD.sigma = sqrt(var(data,0,2));
-    data = data.\POD.sigma;
+%     POD.sigma = sqrt(var(data,0,2));
+%     data = data.\POD.sigma;
 
     %% SVD
     [POD.U,POD.S,POD.V] = svd(data);
+    Nd = size(data,2);
+    POD.U = POD.U(:,1:Nd);
+    POD.S = POD.S(1:Nd,1:Nd);
     if and(isinteger(frac_energy), frac_energy > 1)
         POD.N = min(frac_energy,size(data,2));
     else
@@ -38,5 +41,5 @@ function [POD] = makePOD(data, frac_energy)
     title('POD');
     legend('eigen value', ['reduction, frac = ', num2str(frac_energy)]);
     xlabel('Number of POD components');
-    waitforbuttonpress;
+%     waitforbuttonpress;
 end
