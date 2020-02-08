@@ -5,10 +5,10 @@ function [Rt,Rx] = buildResidual(X,dt,D,bc,mask)
 
     % flux
     Rx = zeros(N,1);
-    for i=mask
+    for i=1:length(mask)
         flux = [0;0];
-        [flux(1)]=calcFlux(X(:,2),D,bc,i);
-        [flux(2)]=calcFlux(X(:,2),D,bc,i+1);
+        [flux(1)]=calcFlux(X(:,2),D,bc,mask(i));
+        [flux(2)]=calcFlux(X(:,2),D,bc,mask(i)+1);
 
         Rx(i) = flux(2) - flux(1);
     end
