@@ -1,38 +1,43 @@
 addpath('./DIF1D');
-startMRSTmodules;
-Nx = 10;
-Nt = 10;
-D = ones(Nx-1,1);
-bc = [1,1];
+clear all;
+clc;
+Nx = 100;
+Nt = 100;
+D = ones(Nx+1,1);
+bc = [2,1];
+kmax = 8;
 %% perform FOM
 dt = 1/Nt;
 t = 0;
 X = ones(Nx,2);
 sol.t(1) = t;
 sol.X = X(:,2);
-[~,sol.Rx] = buildResidual(X,dt,D,bc);
+[~,sol.Rx] = buildResidual(X,dt,D,bc,1:Nx);
 while t < 1
     X(:,2) = X(:,1);
     for k = 1:kmax
-        [Rt,Rx] = buildResidual(X,dt,D,bc);
+        [Rt,Rx] = buildResidual(X,dt,D,bc,1:Nx);
         R = Rt + Rx;
-        if max(abs(R)) <= epsilon
+        if max(abs(R)) <= 1e-8
             t = t+dt;
             X(:,1) = X(:,2);
             sol.t = [sol.t,t];
             sol.X = [sol.X,X(:,2)];
-            sol.R = [sol.Rx, Rx];
+            sol.Rx = [sol.Rx, Rx];
+            if k < 3
+                dt = dt * 2;
+            end
             break;
         elseif k == kmax
             dt = dt / 4;
             break;
         end
-        [Jt,Jx] = buildJacobian(X,dt,D);
+        [Jt,Jx] = buildJacobian(X,dt,D,1:Nx);
         J = diag(Jt) + Jx;
         dX = J \ (-R);
         X(:,2) = X(:,2) + dX;
     end
-    if dt < 1/Nt
+    if dt < 1e-6
         break;
     end
 end
