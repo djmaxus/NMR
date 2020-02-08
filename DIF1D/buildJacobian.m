@@ -9,17 +9,18 @@ function [Jt,Jx] = buildJacobian(X,dt,D,mask)
     Ju = zeros(N-1);
     Jc = zeros(N);
     Jd = zeros(N-1);
-    for i=mask
+    for i=1:length(mask)
+        j = mask(i);
         Jf = [0,0;0,0];
-        [Jf(1,:)]=calcFlux(X(:,2),D,i);
-        [Jf(2,:)]=calcFlux(X(:,2),D,i+1);
-        if i ~=1
-            Jx(i,i-1) = - Jf(1,1);
+        [Jf(1,:)]=calcFlux(X(:,2),D,j);
+        [Jf(2,:)]=calcFlux(X(:,2),D,j+1);
+        if j ~=1
+            Jx(j,j-1) = - Jf(1,1);
         end
         
-        Jx(i,i) = Jf(2,1)-Jf(1,2);
-        if i ~= N
-            Jx(i,i+1) = Jf(2,2);
+        Jx(j,j) = Jf(2,1)-Jf(1,2);
+        if j ~= N
+            Jx(j,j+1) = Jf(2,2);
         end
     end
 end
