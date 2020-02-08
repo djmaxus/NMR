@@ -9,16 +9,16 @@ function [POD] = makePOD(data, frac_energy)
 
     %% Substract mean
     POD.mu = 0;
-%     POD.mu = mean(data,2);
+    POD.mu = mean(data,2);
     data = data - POD.mu;
 
     %% Divide by variation
 %     POD.sigma = sqrt(var(data,0,2));
-%     data = data.\POD.sigma;
+%     data = data.\(POD.sigma+eq(POD.sigma,0));
 
     %% SVD
     [POD.U,POD.S,POD.V] = svd(data);
-    Nd = size(data,2);
+    Nd = min(size(data));
     POD.U = POD.U(:,1:Nd);
     POD.S = POD.S(1:Nd,1:Nd);
     if and(isinteger(frac_energy), frac_energy > 1)
