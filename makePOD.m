@@ -19,12 +19,10 @@ function [POD] = makePOD(data, frac_energy)
     %% SVD
     [POD.U,POD.S,POD.V] = svd(data);
     Nd = min(size(data));
-    POD.U = POD.U(:,1:Nd);
-    POD.S = POD.S(1:Nd,1:Nd);
     if and(isinteger(frac_energy), frac_energy > 1)
         POD.N = min(frac_energy,size(data,2));
     else
-        POD.N = eigEnNum(diag(POD.S),frac_energy);
+        POD.N = eigEnNum(diag(POD.S(1:Nd,1:Nd)),frac_energy);
     end
     POD.Ut = POD.U(:,1:POD.N);
 
