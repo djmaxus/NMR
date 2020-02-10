@@ -9,6 +9,6 @@ function [O] = oblique(P,basis)
     Sx = zeros(size(S'));
     Sx(1:N,1:N)= diagSx;
     Mx = V * Sx * U';
-    O = sparse(basis * Mx * P');
+    O = sparse(Mx * P');
 end
 
