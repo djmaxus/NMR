@@ -10,7 +10,7 @@ function [Rt,Rx] = buildResidual(X,dt,D,bc,mask)
         [flux(1)]=calcFlux(X(:,2),D,bc,mask(i));
         [flux(2)]=calcFlux(X(:,2),D,bc,mask(i)+1);
 
-        Rx(i) = flux(2) - flux(1);
+        Rx(mask(i)) = flux(2) - flux(1);
     end
 end
 
