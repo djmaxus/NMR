@@ -34,7 +34,7 @@ function [POD] = makePOD(data, frac_energy)
     semilogy(en_frac);
 
     hold on;
-    xline(double(POD.N));
+    xline(double(POD.N),'-k',num2str(POD.N));
 
     title('POD');
     legend('eigen value', ['reduction, frac = ', num2str(frac_energy)]);
