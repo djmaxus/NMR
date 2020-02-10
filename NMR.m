@@ -5,9 +5,10 @@ close all;
 clc;
 Nx = 100;
 Nt = Nx;
-D = 100*ones(Nx+1,1)./Nx;
-bc = [2,2];
-kmax = 8;
+T = 2;
+D = 1e-2 * ones(Nx+1,1).*Nx^2;
+bc = [2,1];
+kmax = 12;
 %% perform FOM
 dt = 1/Nt;
 t = 0;
@@ -17,8 +18,12 @@ X = [X0,X0];
 sol.t(1) = t;
 sol.X = X(:,1);
 [~,sol.Rx] = buildResidual(X,dt,D,bc,1:Nx);
-while t < 1
-    dt = min(dt, 1-t);
+while t < T
+    last_step = false;
+    if dt > T-t
+        last_step = true;
+    end
+    dt = min(dt, T-t);
     X(:,2) = X(:,1);
     for k = 1:kmax
         [Rt,Rx] = buildResidual(X,dt,D,bc,1:Nx);
@@ -29,7 +34,7 @@ while t < 1
             sol.t = [sol.t,t];
             sol.X = [sol.X,X(:,2)];
             sol.Rx = [sol.Rx, Rx];
-            if k < 3
+            if k < 4
                 dt = dt * 2;
             end
             break;
@@ -46,12 +51,15 @@ while t < 1
         end
         X(:,2) = X(:,2) + dX;
     end
-    if dt < 1e-5
+    if and(dt < 1e-6/Nt,~last_step)
+        error('not converged');
         break;
     end
 end
 FOM.sol = sol;
-imagesc(FOM.sol.X);axis square;
+f = figure;
+f.WindowState = 'maximized';
+plot(FOM.sol.X(:,end));
 %% preform model reduction
 % X POD
 POD.X = makePOD(sol.X,0.99);
@@ -64,7 +72,7 @@ POD.Rx = makePOD(sol.Rx,0.99);
 % greedy mask
 mask = greedy(POD.Rx.U);
 frac = 0.1;
-Nm = round(frac*size(mask,2));
+Nm = round(frac*Nx);
 Nm = max(Nm,POD.Rx.N);
 mask = mask(:,1:Nm);
 %oblique projector
@@ -78,7 +86,7 @@ for i = 1:size(mask,2)
         end
     end
 end
-mask = out;
+idx_mask = out;
 %% perform ROM
 clear sol;
 dt = 1/Nt;
@@ -87,30 +95,33 @@ X = [X0,X0];
 Y = backward(X0,POD.X);
 sol.t(1) = t;
 sol.X = forward(backward(X0,POD.X),POD.X);
-while t < 1
+while t < T
+    dt = min(dt, T-t);
     Y(:,2) = Y(:,1);
     for k = 1:kmax
-        X = forward(Y,POD.X);
-        [Rt,Rx] = buildResidual(X,dt,D,bc,mask);
+        [Rt,Rx] = buildResidual(X,dt,D,bc,idx_mask);
         % residual oblique projection
-        R = Rt + O * Rx;
+        Rx1 = POD.Rx.mu + O * (Rx - POD.Rx.mu);
+        delta = sum(abs(mask'*(Rx - Rx1)),'all');
+        R = Rt + Rx1;
         Rr = POD.X.Ut'*R;
         if max(abs(Rr)) <= 1e-8
             t = t+dt;
             Y(:,1) = Y(:,2);
             sol.t = [sol.t,t];
             sol.X = [sol.X,X(:,2)];
-            if k <= 3
-                dt = dt *2;
+            if k < 3
+                dt = dt * 2;
             end
             break;
         elseif k == kmax
             dt = dt / 4;
             break;
         end
-        [Jt,Jx] = buildJacobian(X,dt,D,mask);
+        [Jt,Jx] = buildJacobian(X,dt,D,idx_mask);
         % jacobian oblique projector
-        J = diag(Jt) + O * Jx;
+        delta = sum(mask'*abs(O*Jx-Jx),'all');
+        J = diag(Jt) + O*Jx;
         % Galerkin
         P = POD.X.Ut;
         % Least squares Petrov – Galerkin projector
@@ -123,7 +134,8 @@ while t < 1
         dY = J \ (-R);
         Y(:,2) = Y(:,2) + dY;
     end
-    if dt < 1e-5
+    if dt < 1e-6/Nt
+        error('not converged');
         break;
     end
 end
