@@ -3,34 +3,39 @@ function [sol] = solveDif(Nx,idx_mask,POD)
     %   Detailed explanation goes here
     nmr = length(idx_mask) < Nx;
     t = 0;
-    T = 2;
+    T = 1;
     Nt = Nx;
     dt = T/Nt;
-    dt_min = 1e-5*dt;
-    x0 = ones(Nx,1);
+    dt_min = dt;
+    x0 = zeros(Nx,1);
     X = [x0,x0];
     if nmr
         % Galerkin projection
         GP = POD.X.Ut;
         P = GP;
         % X decomposition
-        Y = backward(X,POD.X);
-        X = forward(Y,POD.X);
+        x0 = POD.X.init;
+        X = [x0,x0];
+        Y = zeros(POD.X.N,2);
+        f = figure;
+        f.WindowState = 'maximized';
+        plot(X(:,1)-x0);
     end
     kmax = 12;
-    D = (sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 2);
+    D = 0.0 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
+    D = D * 1e-1;
     if nmr
         f = figure;
         f.WindowState = 'maximized';
         plot(D);
         xlim([1,Nx+1]);
-        ylim([0, max(D)]);
+        ylim([0, max(D)*1.1]);
     end
-    D = D * 1e-2;
     D = D*Nx^2;
-    bc = [-2,2];
-    crit_conv = 1e-8;
-    kmin = 4;
+    bc.first = true;
+    bc.val = [1,-1];
+    crit_conv = 1e-3;
+    kmin = 3;
     sol.t = t;
     sol.X = X(:,2);
     [~,sol.Rx] = buildResidual(X,dt,D,bc,idx_mask,POD);
@@ -49,7 +54,11 @@ function [sol] = solveDif(Nx,idx_mask,POD)
             else
                 R_conv = R;
             end
-            if max(abs(R_conv)) <= crit_conv
+            if k == 1
+                R0 = R_conv;
+            end
+            delta = norm(R_conv);
+            if delta <= crit_conv*max(norm(R0),1)
                 t = t+dt;
                 if nmr
                     Y(:,1) = Y(:,2);
@@ -60,24 +69,23 @@ function [sol] = solveDif(Nx,idx_mask,POD)
                 sol.X = [sol.X,X(:,2)];
                 sol.Rx = [sol.Rx, Rx];
                 if k < kmin
-                    dt = dt * 2;
+                    dt =  dt * 2;
                 end
                 break;
             elseif k == kmax
                 dt = dt / 4;
                 break;
             end
-            [Jt,Jx] = buildJacobian(X,dt,D,idx_mask,POD);
+            [Jt,Jx] = buildJacobian(X,dt,D,bc,idx_mask,POD);
             J = diag(Jt) + Jx;
             if nmr
-                P = GP;
                 % LSPG
                 P = J*GP;
-                % Y derivative
+                % projection
                 J = P' * J;
                 R = P' * R;
                 % Y derivative
-                J = J * POD.X.Ut;
+                J = J * POD.X.Ut; 
             end
             dX = J \ (-R);
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
