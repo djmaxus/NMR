@@ -1,5 +1,6 @@
-function [Jt,Jx] = buildJacobian(X,dt,D,mask)
+function [Jt,Jx] = buildJacobian(X,dt,D,mask,POD)
     N = size(X,1);
+    nmr = length(mask) < N;
     % time derivative
     Jt = ones(N,1)./dt;
     
@@ -22,6 +23,9 @@ function [Jt,Jx] = buildJacobian(X,dt,D,mask)
         if j ~= N
             Jx(j,j+1) = Jf(2,2);
         end
+    end
+    if nmr
+        Jx = POD.Rx.Ut*POD.Rx.O*Jx;
     end
 end
 
