@@ -3,18 +3,18 @@ function [POD] = makePOD(data, frac_energy)
     %   Detailed explanation goes here
 
     %% Substract initial
-    POD.init = 0;
-    %POD.init = data(:,1);
+%     POD.init = 0;
+    POD.init = data(:,1);
     data = data - POD.init;
 
     %% Substract mean
-    POD.mu = 0;
     POD.mu = mean(data,2);
     data = data - POD.mu;
-%     data = data./ sqrt(size(data,2)-1);
+%     POD.mu = 0;
+    data = data./ sqrt(size(data,2)-1);
 
     %% Divide by variation
-    POD.sigma = sqrt(var(data,0,2));
+%     POD.sigma = sqrt(var(data,0,2));
 %     data = data.\(POD.sigma+eq(POD.sigma,0));
 
     %% SVD
@@ -33,6 +33,7 @@ function [POD] = makePOD(data, frac_energy)
     en_frac = diag(POD.S)./sum(diag(POD.S));
 
     semilogy(en_frac);
+    xlim([1 Nd]);
 
     hold on;
     xline(double(POD.N),'-k',num2str(POD.N));
