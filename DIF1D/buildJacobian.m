@@ -1,4 +1,4 @@
-function [Jt,Jx] = buildJacobian(X,dt,D,mask,POD)
+function [Jt,Jx] = buildJacobian(X,dt,D,bc,mask,POD)
     N = size(X,1);
     nmr = length(mask) < N;
     % time derivative
@@ -13,8 +13,8 @@ function [Jt,Jx] = buildJacobian(X,dt,D,mask,POD)
     for i=1:length(mask)
         j = mask(i);
         Jf = [0,0;0,0];
-        [Jf(1,:)]=calcFlux(X(:,2),D,j);
-        [Jf(2,:)]=calcFlux(X(:,2),D,j+1);
+        [Jf(1,:)]=calcFlux(X(:,2),D,bc,j);
+        [Jf(2,:)]=calcFlux(X(:,2),D,bc,j+1);
         if j ~=1
             Jx(j,j-1) = - Jf(1,1);
         end
@@ -29,14 +29,38 @@ function [Jt,Jx] = buildJacobian(X,dt,D,mask,POD)
     end
 end
 
-function [J] = calcFlux(X,D,i)
-    N = size(X);
+function [J] = calcFlux(X,D,bc,i)
+    N = length(X);
     J =[0,0];
-    if and(i~=1,i~=N+1)
-        x = max(X(i),X(i-1));
-        imax = eq(x,X(i-1)) + eq(x,X(i))*2;
+    if bc.first
+        if i==1
+            delta = [bc.val(1),X(i)];
+        elseif i==N+1
+            delta = [X( i - 1 ),bc.val(2)];
+        else
+            delta = [X( i-1 ),X( i )];
+        end
+        imax = 1+ ge(delta(2)-delta(1),0);
+        x = delta(imax);
         for j=1:2
-            J( j ) = -D( i ) * (2 * x * eq( imax, j ) * (X( i ) - X( i - 1 )) + x ^ 2 * (eq( j, 2 ) - eq( j, 1 )));
+            x_dx = 2*x*eq(imax,j);
+            d_dx = eq( j, 2 ) - eq( j, 1 );
+            if i == 1
+                x_dx = x_dx * ne(imax,1);
+                d_dx = d_dx * ne(j,1);
+            elseif i == N+1
+                x_dx = x_dx * ne(imax,N+1);
+                d_dx = d_dx * ne(j,2);
+            end
+            J( j ) = -D( i ) * (x_dx * (delta( 2 ) - delta(1)) + (x^2+1) * d_dx);
+        end
+    else
+        if and(i~=1,i~=N+1)
+            x = max(X(i),X(i-1));
+            imax = eq(x,X(i-1)) + eq(x,X(i))*2;
+            for j=1:2
+                J( j ) = -D( i ) * (2 * x * eq( imax, j ) * (X( i ) - X( i - 1 )) + (x^2+1) * (eq( j, 2 ) - eq( j, 1 )));
+            end
         end
     end
 end
