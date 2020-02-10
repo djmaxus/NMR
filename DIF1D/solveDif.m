@@ -3,7 +3,7 @@ function [sol] = solveDif(Nx,idx_mask,POD)
     %   Detailed explanation goes here
     nmr = length(idx_mask) < Nx;
     t = 0;
-    T = 1;
+    T = 2;
     Nt = Nx;
     dt = T/Nt;
     dt_min = 1e-5*dt;
@@ -18,10 +18,17 @@ function [sol] = solveDif(Nx,idx_mask,POD)
         X = forward(Y,POD.X);
     end
     kmax = 12;
-    D = 1e-2;
+    D = (sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 2);
+    if nmr
+        f = figure;
+        f.WindowState = 'maximized';
+        plot(D);
+        xlim([1,Nx+1]);
+        ylim([0, max(D)]);
+    end
+    D = D * 1e-2;
     D = D*Nx^2;
-    D = D * ones(Nx+1,1);
-    bc = [2,2];
+    bc = [-2,2];
     crit_conv = 1e-8;
     kmin = 4;
     sol.t = t;
