@@ -1,5 +1,6 @@
-function [Rt,Rx] = buildResidual(X,dt,D,bc,mask)
+function [Rt,Rx] = buildResidual(X,dt,D,bc,mask,POD)
     N = size(X,1);
+    nmr = length(mask) < N;
     % time derivative
     Rt = (X(:,2) - X(:,1))./dt;
 
@@ -11,6 +12,9 @@ function [Rt,Rx] = buildResidual(X,dt,D,bc,mask)
         [flux(2)]=calcFlux(X(:,2),D,bc,mask(i)+1);
 
         Rx(mask(i)) = flux(2) - flux(1);
+    end
+    if nmr
+        Rx = forward(POD.Rx.O*(Rx - POD.Rx.mu),POD.Rx);
     end
 end
 
