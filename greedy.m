@@ -18,6 +18,7 @@ for j = 2:size(basis,2)
     waitbar(progress,wb);
 end
 waitbar(1,wb,'Greedy sampling: done');
-waitfor(wb);
+% waitfor(wb);
+delete(wb);
 end
 
