@@ -3,15 +3,20 @@ addpath('./POD');
 close all;
 
 clc;
-Nx = 100;
+Nx = 500;
 [FOM] = solveDif(Nx,[]);
 %% do model reduction
 tic;
-[POD] = doNMR(FOM,0.9,0.9,0.01);
+[POD] = doNMR(FOM,0.9,0.9,0.1);
 toc;
 %% perform ROM
+ROM = [];
 [ROM] = solveDif(Nx,POD);
 %% plot
+if isempty(ROM)
+    ROM.X = [];
+    ROM.t = [];
+end
 Xmin = min([FOM.X,ROM.X],[],'all');
 Xmax = max([FOM.X,ROM.X],[],'all');
 Tmin = min([FOM.t,ROM.t],[],'all');
@@ -21,28 +26,34 @@ f = figure;
 f.WindowState = 'maximized';
 
 subplot(2,2,1);
-imagesc('CData',FOM.X,'XData',FOM.t,'YData',(1:Nx)./Nx); 
+imagesc('CData',FOM.X,'XData',FOM.t,'YData',(1:Nx)./Nx);
 caxis([Xmin Xmax]);
 xlim([Tmin Tmax]);
 ylim([1/Nx 1]);
 colorbar;
 colormap jet;
 
-subplot(2,2,3);
-imagesc('CData',ROM.X,'XData',ROM.t,'YData',(1:Nx)./Nx); 
-caxis([Xmin Xmax]);
-xlim([Tmin Tmax]);
-ylim([1/Nx 1]);
-colorbar;
-colormap jet;
+if ~isempty(ROM)
+    subplot(2,2,3);
+    imagesc('CData',ROM.X,'XData',ROM.t,'YData',(1:Nx)./Nx);
+    caxis([Xmin Xmax]);
+    xlim([Tmin Tmax]);
+    ylim([1/Nx 1]);
+    colorbar;
+    colormap jet;
+end
 
 subplot(2,2,2);
 plot(FOM.X(:,end));
-hold on;
-plot(ROM.X(:,end));
-subplot(2,2,4);
-enum = abs(ROM.X(:,end) - FOM.X(:,end));
-denom = Xmax - Xmin;
-denom = denom + eq(denom,0);
-res = enum./denom;
-plot(res);
+
+if ~isempty(ROM.X)
+    hold on;
+    plot(ROM.X(:,end));
+    subplot(2,2,4);
+    enum = abs(ROM.X(:,end) - FOM.X(:,end));
+    denom = Xmax - Xmin;
+    denom = denom + eq(denom,0);
+    res = enum./denom;
+    plot(res);
+end
+
