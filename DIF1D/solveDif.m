@@ -4,7 +4,7 @@ function [sol] = solveDif(Nx,POD)
     nmr = ~isempty(POD);
     t = 0;
     T = 1.0;
-    Nt = round(Nx);
+    Nt = Nx;
     dt = T/Nt;
     dt_min = dt;
     x0 = zeros(Nx,1);
@@ -23,7 +23,7 @@ function [sol] = solveDif(Nx,POD)
     end
     kmax = 12;
     D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
-    D = D * 1e-1;
+    D = D * 1e-2;
     if nmr
         f = figure;
         f.WindowState = 'maximized';
@@ -32,13 +32,15 @@ function [sol] = solveDif(Nx,POD)
         ylim([0, max(D)*1.1]);
     end
     D = D*Nx^2;
-    bc.first = true;
-    bc.val = [1,-1];
+    bc.first = false;
+    bc.val = [1,1];
     crit_conv = 1e-3;
     kmin = 3;
     sol.t = t;
     sol.X = X(:,2);
-    [~,sol.Rx,sol.Rxl,sol.Rxr] = buildResidual(X,dt,D,bc,POD);
+    [~,sol.Rxl,sol.Rxr] = buildResidual(X,dt,D,bc,POD);
+    sol.Rx = sol.Rxr - sol.Rxl;
+    tic;
     while t < T - dt_min
         dt = min(dt, T-t);
         if nmr
@@ -47,7 +49,8 @@ function [sol] = solveDif(Nx,POD)
             X(:,2) = X(:,1);
         end
         for k = 1:kmax
-            [Rt,Rx,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD);
+            [Rt,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD);
+            Rx = Rxr - Rxl;
             R = Rt + Rx;
             if nmr
                 R_conv = P'* R; 
@@ -63,15 +66,16 @@ function [sol] = solveDif(Nx,POD)
                 if nmr
                     Y(:,1) = Y(:,2);
                 else
-                    X(:,1) = X(:,2);    
+                    X(:,1) = X(:,2);  
+                    sol.Rx = [sol.Rx, Rx];
+                    sol.Rxl = [sol.Rxl, Rxl];
+                    sol.Rxr = [sol.Rxr, Rxr];
                 end
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
-                sol.Rx = [sol.Rx, Rx];
-                sol.Rxl = [sol.Rxl, Rxl];
-                sol.Rxr = [sol.Rxr, Rxr];
+                
                 if k < kmin
-                    dt =  dt * 2;
+%                     dt =  dt * 2;
                 end
                 break;
             elseif k == kmax
@@ -106,5 +110,6 @@ function [sol] = solveDif(Nx,POD)
             break;
         end
     end
+    toc;
 end
 
