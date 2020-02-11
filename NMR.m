@@ -3,18 +3,14 @@ addpath('./POD');
 close all;
 
 clc;
-Nx = 10;
-tic;
+Nx = 100;
 [FOM] = solveDif(Nx,[]);
-toc;
 %% do model reduction
 tic;
-[POD] = doNMR(FOM,0.9,0.9,0.1);
+[POD] = doNMR(FOM,0.9,0.9,0.01);
 toc;
 %% perform ROM
-tic;
 [ROM] = solveDif(Nx,POD);
-toc;
 %% plot
 Xmin = min([FOM.X,ROM.X],[],'all');
 Xmax = max([FOM.X,ROM.X],[],'all');
