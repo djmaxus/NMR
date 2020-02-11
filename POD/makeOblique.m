@@ -1,7 +1,8 @@
-function [POD] = makeOblique(frac,Nx,POD)
+function [POD] = makeOblique(frac,POD)
     %MAKEOBLIQUE Summary of this function goes here
     %   Detailed explanation goes here
     %% greedy mask
+    Nx = size(POD.U,1);
     Nm = round(frac*Nx);
     Nm = max(Nm,POD.N);
     mask = greedy(POD.U(:,1:Nm));
@@ -16,15 +17,8 @@ function [POD] = makeOblique(frac,Nx,POD)
         end
     end
     %% add boundary cells
-    find_left = false;
-    find_right = false;
-    for i = idx_mask'
-        if i == 1
-            find_left = true;
-        elseif i == Nx
-            find_right = true;
-        end
-    end
+    find_left = min(idx_mask) <= 1+1;
+    find_right = max(idx_mask) >= Nx+1-1;
     if ~find_left
         idx_mask = [idx_mask;1];
         dmask = zeros(Nx,1);
