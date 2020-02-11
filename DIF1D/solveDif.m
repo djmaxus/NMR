@@ -3,9 +3,8 @@ function [sol] = solveDif(Nx,POD)
     %   Detailed explanation goes here
     nmr = ~isempty(POD);
     t = 0;
-    T = 1.0;
-    Nt = Nx;
-    dt = T/Nt;
+    T = 4.0;
+    dt = T/Nx;
     dt_min = dt;
     x0 = zeros(Nx,1);
     X = [x0,x0];
@@ -14,9 +13,7 @@ function [sol] = solveDif(Nx,POD)
         GP = POD.X.Ut;
         P = GP;
         % X decomposition
-        x0 = POD.X.init;
-        X = [x0,x0];
-        Y = zeros(POD.X.N,2);
+        X = forward(backward(X,POD.X),POD.X);
         f = figure;
         f.WindowState = 'maximized';
         plot(X(:,1)-x0);
@@ -32,75 +29,69 @@ function [sol] = solveDif(Nx,POD)
         ylim([0, max(D)*1.1]);
     end
     D = D*Nx^2;
-    bc.first = false;
-    bc.val = [1,1];
-    crit_conv = 1e-3;
-    kmin = 3;
+    bc.first = true;
+    bc.val = [1,-1];
+    crit_conv = 1e-4;
+    kmin = 4;
     sol.t = t;
     sol.X = X(:,2);
-    [~,sol.Rxl,sol.Rxr] = buildResidual(X,dt,D,bc,POD);
-    sol.Rx = sol.Rxr - sol.Rxl;
+    [~,~,sol.W] = buildResidual(X,dt,D,bc,POD);
     tic;
     while t < T - dt_min
         dt = min(dt, T-t);
-        if nmr
-            Y(:,2) = Y(:,1);     
-        else
-            X(:,2) = X(:,1);
-        end
+        X(:,2) = X(:,1);
+        if nmr; Y = backward(X(:,2),POD.X); end
         for k = 1:kmax
-            [Rt,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD);
-            Rx = Rxr - Rxl;
+            %% residual
+            [Rt,Rx,W] = buildResidual(X,dt,D,bc,POD);
             R = Rt + Rx;
+            
+            %% Jacobian        
+            [Jt,Jx] = buildJacobian(X,dt,D,bc,[]);   
+            J = Jx + speye(size(Jx)).*diag(Jt);
             if nmr
-                R_conv = P'* R; 
-            else
-                R_conv = R;
+                % LSPG
+%                 P = J*GP;
+                % projection
+                R = P' * R;
+                J = P' * J * POD.X.Ut; 
             end
-            if k == 1
-                R0 = R_conv;
-            end
+            
+            %% convergence
+            R_conv = R;
+            
+            if k == 1; R0 = norm(R_conv); end
             delta = norm(R_conv);
-            if delta <= crit_conv*max(norm(R0),1)
+            
+            if delta*dt <= crit_conv
                 t = t+dt;
-                if nmr
-                    Y(:,1) = Y(:,2);
-                else
-                    X(:,1) = X(:,2);  
-                    sol.Rx = [sol.Rx, Rx];
-                    sol.Rxl = [sol.Rxl, Rxl];
-                    sol.Rxr = [sol.Rxr, Rxr];
-                end
+                X(:,1) = X(:,2);  
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
-                
-                if k < kmin
-%                     dt =  dt * 2;
+                sol.W = [sol.W, W];
+                if nmr
+                    if k < kmin
+                        dt =  dt * 2;
+                    end
                 end
                 break;
+                
             elseif k == kmax
                 dt = dt / 4;
                 break;
             end
-            [Jt,Jx] = buildJacobian(X,dt,D,bc,POD);
-            J = diag(Jt) + Jx;
-            if nmr
-                % LSPG
-                P = J*GP;
-                % projection
-                J = P' * J;
-                R = P' * R;
-                % Y derivative
-                J = J * POD.X.Ut; 
-            end
+            
+            %% linsolve
             dX = J \ (-R);
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
             if is_weak > 0
-                dX = 0;
+                dX(:) = 0;
             end
+            
+            %% update
             if nmr
-                Y(:,2) = Y(:,2) + dX;
-                X = forward(Y,POD.X);
+                Y = Y + dX;
+                X(:,2) = forward(Y,POD.X);
             else
                 X(:,2) = X(:,2) + dX;
             end
