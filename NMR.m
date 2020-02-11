@@ -1,16 +1,16 @@
 addpath('./DIF1D');
 addpath('./POD');
 close all;
-
 clc;
-Nx = 500;
+ROM = [];
+
+Nx = 100;
 [FOM] = solveDif(Nx,[]);
 %% do model reduction
 tic;
 [POD] = doNMR(FOM,0.9,0.9,0.1);
 toc;
 %% perform ROM
-ROM = [];
 [ROM] = solveDif(Nx,POD);
 %% plot
 if isempty(ROM)

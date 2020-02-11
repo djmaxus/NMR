@@ -3,9 +3,9 @@ function [sol] = solveDif(Nx,POD)
     %   Detailed explanation goes here
     nmr = ~isempty(POD);
     t = 0;
-    T = 4.0;
+    T = 1.0;
     dt = T/Nx;
-    dt_min = dt;
+    dt_min = dt*1e-2;
     x0 = zeros(Nx,1);
     X = [x0,x0];
     if nmr
@@ -20,7 +20,7 @@ function [sol] = solveDif(Nx,POD)
     end
     kmax = 12;
     D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
-    D = D * 1e-2;
+    D = D * 1e-1;
     if nmr
         f = figure;
         f.WindowState = 'maximized';
@@ -31,11 +31,11 @@ function [sol] = solveDif(Nx,POD)
     D = D*Nx^2;
     bc.first = true;
     bc.val = [1,-1];
-    crit_conv = 1e-4;
+    crit_conv = 1e-8;
     kmin = 4;
     sol.t = t;
     sol.X = X(:,2);
-    [~,~,sol.W] = buildResidual(X,dt,D,bc,POD);
+    [~,sol.W] = buildResidual(X,dt,D,bc,POD);
     tic;
     while t < T - dt_min
         dt = min(dt, T-t);
@@ -43,24 +43,24 @@ function [sol] = solveDif(Nx,POD)
         if nmr; Y = backward(X(:,2),POD.X); end
         for k = 1:kmax
             %% residual
-            [Rt,Rx,W] = buildResidual(X,dt,D,bc,POD);
-            R = Rt + Rx;
+            [Rt,W] = buildResidual(X,dt,D,bc,POD);
+            R = Rt + W(2:Nx+1) - W(1:Nx);
             
             %% Jacobian        
-            [Jt,Jx] = buildJacobian(X,dt,D,bc,[]);   
-            J = Jx + speye(size(Jx)).*diag(Jt);
+            [Jt,Jx] = buildJacobian(X,dt,D,bc,POD);   
+            J = Jx + + diag(Jt);
             if nmr
                 % LSPG
 %                 P = J*GP;
                 % projection
                 R = P' * R;
-                J = P' * J * POD.X.Ut; 
+                J = P' * J; 
+                % PCA derivative
+                J = J * POD.X.Ut;
             end
             
             %% convergence
             R_conv = R;
-            
-            if k == 1; R0 = norm(R_conv); end
             delta = norm(R_conv);
             
             if delta*dt <= crit_conv
@@ -74,15 +74,15 @@ function [sol] = solveDif(Nx,POD)
                         dt =  dt * 2;
                     end
                 end
-                break;
-                
+                break;    
             elseif k == kmax
                 dt = dt / 4;
                 break;
             end
             
             %% linsolve
-            dX = J \ (-R);
+            [q,r] = qr(J);
+            dX = -r\(q'*R);
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
             if is_weak > 0
                 dX(:) = 0;
