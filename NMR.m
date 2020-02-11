@@ -3,17 +3,17 @@ addpath('./POD');
 close all;
 
 clc;
-Nx = 200;
+Nx = 10;
 tic;
-[FOM] = solveDif(Nx,1:Nx,[]);
+[FOM] = solveDif(Nx,[]);
 toc;
 %% do model reduction
 tic;
-[POD,mask,idx_mask] = doNMR(FOM,0.9,0.9,0.1);
+[POD] = doNMR(FOM,0.9,0.9,0.1);
 toc;
 %% perform ROM
 tic;
-[ROM] = solveDif(Nx,idx_mask,POD);
+[ROM] = solveDif(Nx,POD);
 toc;
 %% plot
 Xmin = min([FOM.X,ROM.X],[],'all');
@@ -49,4 +49,4 @@ enum = abs(ROM.X(:,end) - FOM.X(:,end));
 denom = Xmax - Xmin;
 denom = denom + eq(denom,0);
 res = enum./denom;
-semilogy(res);
+plot(res);

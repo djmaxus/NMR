@@ -1,10 +1,10 @@
-function [sol] = solveDif(Nx,idx_mask,POD)
+function [sol] = solveDif(Nx,POD)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
-    nmr = length(idx_mask) < Nx;
+    nmr = ~isempty(POD);
     t = 0;
-    T = 1;
-    Nt = Nx;
+    T = 1.0;
+    Nt = round(Nx);
     dt = T/Nt;
     dt_min = dt;
     x0 = zeros(Nx,1);
@@ -22,7 +22,7 @@ function [sol] = solveDif(Nx,idx_mask,POD)
         plot(X(:,1)-x0);
     end
     kmax = 12;
-    D = 0.0 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
+    D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
     D = D * 1e-1;
     if nmr
         f = figure;
@@ -38,7 +38,7 @@ function [sol] = solveDif(Nx,idx_mask,POD)
     kmin = 3;
     sol.t = t;
     sol.X = X(:,2);
-    [~,sol.Rx] = buildResidual(X,dt,D,bc,idx_mask,POD);
+    [~,sol.Rx,sol.Rxl,sol.Rxr] = buildResidual(X,dt,D,bc,POD);
     while t < T - dt_min
         dt = min(dt, T-t);
         if nmr
@@ -47,7 +47,7 @@ function [sol] = solveDif(Nx,idx_mask,POD)
             X(:,2) = X(:,1);
         end
         for k = 1:kmax
-            [Rt,Rx] = buildResidual(X,dt,D,bc,idx_mask,POD);
+            [Rt,Rx,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD);
             R = Rt + Rx;
             if nmr
                 R_conv = P'* R; 
@@ -68,6 +68,8 @@ function [sol] = solveDif(Nx,idx_mask,POD)
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
                 sol.Rx = [sol.Rx, Rx];
+                sol.Rxl = [sol.Rxl, Rxl];
+                sol.Rxr = [sol.Rxr, Rxr];
                 if k < kmin
                     dt =  dt * 2;
                 end
@@ -76,7 +78,7 @@ function [sol] = solveDif(Nx,idx_mask,POD)
                 dt = dt / 4;
                 break;
             end
-            [Jt,Jx] = buildJacobian(X,dt,D,bc,idx_mask,POD);
+            [Jt,Jx] = buildJacobian(X,dt,D,bc,POD);
             J = diag(Jt) + Jx;
             if nmr
                 % LSPG
@@ -100,7 +102,7 @@ function [sol] = solveDif(Nx,idx_mask,POD)
             end
         end
         if dt < dt_min
-            error('not converged');
+            error(['not converged, residual = ',num2str(delta)]);
             break;
         end
     end

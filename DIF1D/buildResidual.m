@@ -1,23 +1,46 @@
-function [Rt,Rx] = buildResidual(X,dt,D,bc,mask,POD)
+function [Rt,Rx,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD)
     N = size(X,1);
-    nmr = length(mask) < N;
-    % time derivative
+    nmr = ~isempty(POD);
+    %% time derivative
     Rt = (X(:,2)-X(:,1))./dt;
-
-    % flux
-    Rx = zeros(N,1);
+    
+    %% right flux
+    Rxr = zeros(N,1);
+    if nmr
+        mask = POD.Rxr.idx_mask;
+    else
+        mask = 1:N;
+    end
     for i=1:length(mask)
-        flux = [0;0];
-        [flux(1)]=calcFlux(X(:,2),D,bc,mask(i));
-        [flux(2)]=calcFlux(X(:,2),D,bc,mask(i)+1);
-
-        Rx(mask(i)) = flux(2) - flux(1);
+        [flux]=calcFlux(X(:,2),D,bc,mask(i)+1);
+        Rxr(mask(i)) = flux;
     end
     if nmr
-        Rx = Rx - (POD.Rx.mu + POD.Rx.init);
-        Rx = POD.Rx.O*Rx;
-        Rx = forward(Rx,POD.Rx);
+        Rxr = Rxr - (POD.Rxr.mu + POD.Rxr.init);
+        Rxr = POD.Rxr.O*Rxr;
+        Rxr = forward(Rxr,POD.Rxr);
     end
+    
+    %% left flux
+    Rxl = zeros(N,1);
+    if nmr
+        mask = POD.Rxl.idx_mask;
+    else
+        mask = 1:N;
+    end
+    for i=1:length(mask)
+        [flux]=calcFlux(X(:,2),D,bc,mask(i));
+        Rxl(mask(i)) = flux(1);
+    end
+    if nmr
+        Rxl = Rxl - (POD.Rxl.mu + POD.Rxl.init);
+        Rxl = POD.Rxl.O*Rxl;
+        Rxl = forward(Rxl,POD.Rxl);
+    end
+    
+    %% total flux
+    Rx = Rxr - Rxl;
+    
 end
 
 function [R] = calcFlux(X,D,bc,i)
