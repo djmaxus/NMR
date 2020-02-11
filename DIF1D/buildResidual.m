@@ -1,4 +1,4 @@
-function [Rt,Rx,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD)
+function [Rt,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD)
     N = size(X,1);
     nmr = ~isempty(POD);
     %% time derivative
@@ -37,9 +37,6 @@ function [Rt,Rx,Rxl,Rxr] = buildResidual(X,dt,D,bc,POD)
         Rxl = POD.Rxl.O*Rxl;
         Rxl = forward(Rxl,POD.Rxl);
     end
-    
-    %% total flux
-    Rx = Rxr - Rxl;
     
 end
 
