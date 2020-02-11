@@ -8,26 +8,25 @@ function [Jt,Jx] = buildJacobian(X,dt,D,bc,POD)
     Jx = spalloc(N,N,3*N-2);
     %TODO: make 3 diags
     if nmr
-        mask = POD.Rx.idx_mask;
+        mask = POD.W.idx_mask';
     else
-        mask = 1:N;
+        mask = 1:N+1;
     end
-    for i=1:length(mask)
-        j = mask(i);
-        Jf = [0,0;0,0];
-        [Jf(1,:)]=calcFlux(X(:,2),D,bc,j);
-        
-        if j ~=1
-            Jx(j,j-1) = - Jf(1,1);
-        end
-        [Jf(2,:)]=calcFlux(X(:,2),D,bc,j+1);
-        Jx(j,j) = Jf(2,1)-Jf(1,2);
-        if j ~= N
-            Jx(j,j+1) = Jf(2,2);
-        end
+    Jw = zeros(N+1,2);
+    for i = mask
+        Jw(i,:) = calcFlux(X(:,2),D,bc,i);
     end
     if nmr
-        Jx = POD.Rx.Ut*POD.Rx.O*Jx;
+        Jw = applyOblique(Jw,POD.W);
+    end
+    for i=1:N    
+        if i ~=1
+            Jx(i,i-1) = -Jw(i,1);
+        end
+        Jx(i,i) = Jw(i+1,1) - Jw(i,2);
+        if i ~= N
+            Jx(i,i+1) = Jw(i+1,2);
+        end
     end
 end
 
