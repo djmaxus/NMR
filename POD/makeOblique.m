@@ -17,23 +17,23 @@ function [POD] = makeOblique(frac,POD)
         end
     end
     %% add boundary cells
-    find_left = min(idx_mask) <= 1+1;
-    find_right = max(idx_mask) >= Nx+1-1;
-    if ~find_left
-        idx_mask = [idx_mask;1];
-        dmask = zeros(Nx,1);
-        dmask(1) = 1;
-        mask = [mask,dmask];
-    end
-    if ~find_right
-        idx_mask = [idx_mask;Nx];
-        dmask = zeros(Nx,1);
-        dmask(Nx) = 1;
-        mask = [mask,dmask];
-    end
+%     find_left = min(idx_mask) <= 1;
+%     find_right = max(idx_mask) >= Nx;
+%     if ~find_left
+%         idx_mask = [idx_mask;1];
+%         dmask = zeros(Nx,1);
+%         dmask(1) = 1;
+%         mask = [mask,dmask];
+%     end
+%     if ~find_right
+%         idx_mask = [idx_mask;Nx];
+%         dmask = zeros(Nx,1);
+%         dmask(Nx) = 1;
+%         mask = [mask,dmask];
+%     end
+    %% set data
     POD.mask = mask;
     POD.idx_mask = idx_mask;
     %% calculate oblique projector
     POD.O = oblique(mask,POD.Ut);
 end
-
