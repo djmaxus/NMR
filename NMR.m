@@ -8,12 +8,12 @@ ROM = [];
 
 Nx = 500;
 bc.first = false;
-bc.val = [2,2];
+bc.val = [1,1];
 [dataset] = solveDif(Nx,[],bc,true);
 %% do model reduction
 close all;
 tic;
-[POD] = doNMR(dataset,0.01,0.1,0.2);
+[POD] = doNMR(dataset,0.01,0.01,0.2);
 toc;
 %% perform ROM and compare
 close all;
