@@ -1,22 +1,24 @@
-function [Rt,W] = buildResidual(X,dt,D,bc,POD)
+function [Rt,Rx] = buildResidual(X,dt,D,bc,POD)
     N = size(X,1);
     nmr = ~isempty(POD);
     %% time derivative
     Rt = (X(:,2)-X(:,1))./dt;
-    
+
     %% fluxes
+    mask = 1:N;
     if nmr
-        mask = POD.W.idx_mask';
-    else
-        mask = 1:N+1;
+        mask = POD.Rx.idx_mask';
     end
     W = zeros(N+1,1);
     for i = mask
         W(i) = calcFlux(X(:,2),D,bc,i);
+        W(i+1) = calcFlux(X(:,2),D,bc,i+1);
     end
+    Rx = W(2:N+1)-W(1:N);
     if nmr
-        W = applyOblique(W,POD.W);
+        Rx = applyOblique(Rx,POD.Rx);
     end
+
 end
 
 function [R] = calcFlux(X,D,bc,i)

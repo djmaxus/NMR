@@ -3,23 +3,20 @@ function [Jt,Jx] = buildJacobian(X,dt,D,bc,POD)
     nmr = ~isempty(POD);
     % time derivative
     Jt = ones(N,1)./dt;
-    
+
     % flux
     Jx = spalloc(N,N,3*N-2);
     %TODO: make 3 diags
+    mask = 1:N;
     if nmr
-        mask = POD.W.idx_mask';
-    else
-        mask = 1:N+1;
+        %mask = POD.Rx.idx_mask';
     end
     Jw = zeros(N+1,2);
     for i = mask
         Jw(i,:) = calcFlux(X(:,2),D,bc,i);
+        Jw(i+1,:) = calcFlux(X(:,2),D,bc,i+1);
     end
-    if nmr
-        Jw = applyOblique(Jw,POD.W);
-    end
-    for i=1:N    
+    for i=1:N
         if i ~=1
             Jx(i,i-1) = -Jw(i,1);
         end
@@ -27,6 +24,9 @@ function [Jt,Jx] = buildJacobian(X,dt,D,bc,POD)
         if i ~= N
             Jx(i,i+1) = Jw(i+1,2);
         end
+    end
+    if nmr
+        Jx = applyOblique(Jx',POD.Rx)';
     end
 end
 

@@ -5,20 +5,22 @@ function [sol] = solveDif(Nx,POD)
     t = 0;
     T = 1.0;
     dt = T/Nx;
-    dt_min = dt*1e-2;
+    dt_min = dt;
     x0 = zeros(Nx,1);
     X = [x0,x0];
     if nmr
         % Galerkin projection
         GP = POD.X.Ut;
-        P = GP;
         % X decomposition
-        X = forward(backward(X,POD.X),POD.X);
+        Y = backward(X,POD.X);
+        X = forward(Y,POD.X);
         f = figure;
         f.WindowState = 'maximized';
-        plot(X(:,1)-x0);
+        plot(X(:,1));
+        hold on;
+        plot(x0);
     end
-    kmax = 12;
+    kmax = 8;
     D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
     D = D * 1e-1;
     if nmr
@@ -29,57 +31,61 @@ function [sol] = solveDif(Nx,POD)
         ylim([0, max(D)*1.1]);
     end
     D = D*Nx^2;
-    bc.first = true;
-    bc.val = [1,-1];
-    crit_conv = 1e-8;
-    kmin = 4;
+    bc.first = false;
+    bc.val = [1,1];
+    crit_conv = 1e-4;
+    kmin = 3;
     sol.t = t;
     sol.X = X(:,2);
-    [~,sol.W] = buildResidual(X,dt,D,bc,POD);
-    tic;
+    [~,sol.Rx] = buildResidual(X,dt,D,bc,POD);
+    timer = tic;
     while t < T - dt_min
         dt = min(dt, T-t);
         X(:,2) = X(:,1);
-        if nmr; Y = backward(X(:,2),POD.X); end
+        if nmr
+            Y = backward(X(:,2),POD.X);
+        end
         for k = 1:kmax
             %% residual
-            [Rt,W] = buildResidual(X,dt,D,bc,POD);
-            R = Rt + W(2:Nx+1) - W(1:Nx);
-            
-            %% Jacobian        
-            [Jt,Jx] = buildJacobian(X,dt,D,bc,POD);   
+            [Rt,Rx] = buildResidual(X,dt,D,bc,POD);
+            R = Rt + Rx;
+
+            %% Jacobian
+            [Jt,Jx] = buildJacobian(X,dt,D,bc,[]);
             J = Jx + + diag(Jt);
             if nmr
-                % LSPG
-%                 P = J*GP;
+                % Galerkin
+                P = GP;
+                % Least-squares Petrov -- Galerkin
+%                 P = J*P;
                 % projection
                 R = P' * R;
-                J = P' * J; 
+                J = P' * J;
                 % PCA derivative
                 J = J * POD.X.Ut;
             end
-            
+
             %% convergence
             R_conv = R;
-            delta = norm(R_conv);
-            
-            if delta*dt <= crit_conv
+            delta = norm(R_conv)*dt;
+
+            if delta <= crit_conv
                 t = t+dt;
-                X(:,1) = X(:,2);  
+                X(:,1) = X(:,2);
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
-                sol.W = [sol.W, W];
+                sol.Rx = [sol.Rx, Rx];
                 if nmr
-                    if k < kmin
-                        dt =  dt * 2;
+                    if k <= kmin
+%                         dt =  dt * 2;
                     end
                 end
-                break;    
+                break;
             elseif k == kmax
                 dt = dt / 4;
                 break;
             end
-            
+
             %% linsolve
             [q,r] = qr(J);
             dX = -r\(q'*R);
@@ -87,7 +93,7 @@ function [sol] = solveDif(Nx,POD)
             if is_weak > 0
                 dX(:) = 0;
             end
-            
+
             %% update
             if nmr
                 Y = Y + dX;
@@ -101,6 +107,6 @@ function [sol] = solveDif(Nx,POD)
             break;
         end
     end
-    toc;
+    timer = toc(timer);
+    sol.timer = timer;
 end
-
