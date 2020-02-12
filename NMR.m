@@ -3,7 +3,6 @@
 % TODO: extend mask properly
 addpath('./DIF1D');
 addpath('./POD');
-close all;
 clc;
 ROM = [];
 
@@ -12,10 +11,12 @@ bc.first = false;
 bc.val = [2,2];
 [dataset] = solveDif(Nx,[],bc,true);
 %% do model reduction
+close all;
 tic;
 [POD] = doNMR(dataset,0.01,0.1,0.2);
 toc;
 %% perform ROM and compare
+close all;
 bc.val = [1,1];
 [FOM] = solveDif(Nx,[],bc,false);
 [ROM] = solveDif(Nx,POD,bc,false);
