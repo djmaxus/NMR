@@ -41,6 +41,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
     sol.t = t;
     sol.X = X(:,2);
     [~,sol.Rx] = buildResidual(X,dt,D,bc,POD);
+    [~,~,sol.Jw] = buildJacobian(X,dt,D,bc,[]);
     timer = tic;
     while t < T - dt_min
         dt = min(dt, T-t);
@@ -54,7 +55,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             R = Rt + Rx;
             
             %% Jacobian
-            [Jt,Jx] = buildJacobian(X,dt,D,bc,[]);
+            [Jt,Jx,Jw] = buildJacobian(X,dt,D,bc,POD);
             J = Jx + + diag(Jt);
             if nmr
                 % Galerkin
@@ -80,6 +81,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
                 sol.Rx = [sol.Rx, Rx];
+                sol.Jw = [sol.Jw, Jw];
                 if ~learn
                     if k <= kmin
                         dt =  dt * 2;

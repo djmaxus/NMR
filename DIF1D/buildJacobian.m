@@ -1,38 +1,59 @@
-function [Jt,Jx] = buildJacobian(X,dt,D,bc,POD)
+function [Jt,Jx,Jw] = buildJacobian(X,dt,D,bc,POD)
     N = size(X,1);
     nmr = ~isempty(POD);
     % time derivative
     Jt = ones(N,1)./dt;
-
-    % flux
-    Jx = spalloc(N,N,3*N-2);
-    %TODO: make 3 diags
-    mask = 1:N;
-    if nmr
-        %mask = POD.Rx.idx_mask';
-    end
+    % flux 
     Jw = zeros(N+1,2);
-    for i = mask
-        Jw(i,:) = calcFlux(X(:,2),D,bc,i);
-        Jw(i+1,:) = calcFlux(X(:,2),D,bc,i+1);
+    mask = 1:N+1;
+    if nmr
+        mask = POD.Jw.idx_mask';
     end
+    for k = mask
+        % set i,j
+        rj = 1:2;
+        i = k;
+        if k > N + 1
+            i = k - N - 1;
+            rj = 2;
+        end
+        Jw(i,rj) = calcFlux(X(:,2),D,bc,i,rj);
+    end
+    if nmr
+        % gappy;
+        Jw = [Jw(:,1);Jw(:,2)];
+        Jw = applyOblique(Jw,POD.Jw);
+        Jw = [Jw(1:N+1,1),Jw(N+2:end,1)];
+    end
+    
+    Jc = zeros(N,1);
+    Ju = zeros(N-1,1);
+    Jd = zeros(N-1,1);
     for i=1:N
         if i ~=1
-            Jx(i,i-1) = -Jw(i,1);
+            Jd(i-1) = -Jw(i,1);
         end
-        Jx(i,i) = Jw(i+1,1) - Jw(i,2);
+        Jc(i) = Jw(i+1,1) - Jw(i,2);
         if i ~= N
-            Jx(i,i+1) = Jw(i+1,2);
+            Ju(i) = Jw(i+1,2);
         end
     end
-    if nmr
-        Jx = applyOblique(Jx',POD.Rx)';
+    Jw = [Jw(:,1);Jw(:,2)];
+    Jx = spalloc(N,N,3*N-2);
+    for i=1:N
+        if i ~=1
+            Jx(i,i-1) = Jd(i-1);
+        end
+        Jx(i,i) = Jc(i);
+        if i ~= N
+            Jx(i,i+1) = Ju(i);
+        end
     end
 end
 
-function [J] = calcFlux(X,D,bc,i)
+function [J] = calcFlux(X,D,bc,i,rj)
     N = length(X);
-    J =[0,0];
+    J = zeros(size(rj));
     if bc.first
         if i==1
             delta = [bc.val(1),X(i)];
@@ -43,7 +64,7 @@ function [J] = calcFlux(X,D,bc,i)
         end
         imax = 1+ ge(delta(2)-delta(1),0);
         x = delta(imax);
-        for j=1:2
+        for j = rj
             x_dx = 2*x*eq(imax,j);
             d_dx = eq( j, 2 ) - eq( j, 1 );
             if i == 1
@@ -59,9 +80,10 @@ function [J] = calcFlux(X,D,bc,i)
         if and(i~=1,i~=N+1)
             x = max(X(i),X(i-1));
             imax = eq(x,X(i-1)) + eq(x,X(i))*2;
-            for j=1:2
+            for j=rj
                 J( j ) = -D( i ) * (2 * x * eq( imax, j ) * (X( i ) - X( i - 1 )) + (x^2+1) * (eq( j, 2 ) - eq( j, 1 )));
             end
         end
     end
+    J = J(rj);
 end
