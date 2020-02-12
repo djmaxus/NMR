@@ -1,8 +1,6 @@
 
 % TODO: calculate X as supporting variable for ROM
-% TODO: try various projections
 % TODO: extend mask properly
-% TODO: build Jacobian gappy
 addpath('./DIF1D');
 addpath('./POD');
 close all;
@@ -10,13 +8,17 @@ clc;
 ROM = [];
 
 Nx = 500;
-[FOM] = solveDif(Nx,[]);
+bc.first = false;
+bc.val = [2,2];
+[dataset] = solveDif(Nx,[],bc,true);
 %% do model reduction
 tic;
-[POD] = doNMR(FOM,0.1,0.1,0.1);
+[POD] = doNMR(dataset,0.01,0.1,0.2);
 toc;
-%% perform ROM
-[ROM] = solveDif(Nx,POD);
+%% perform ROM and compare
+bc.val = [1,1];
+[FOM] = solveDif(Nx,[],bc,false);
+[ROM] = solveDif(Nx,POD,bc,false);
 %% plot
 if isempty(ROM)
     ROM.X = [];
@@ -61,4 +63,6 @@ if ~isempty(ROM.X)
     res = enum./denom;
     plot(res);
 end
-disp(['Speed up: ',num2str(FOM.timer / ROM.timer)]);
+
+speed_up = FOM.timer / ROM.timer;
+disp(['Speed up: ',num2str(speed_up)]);
