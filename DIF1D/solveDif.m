@@ -1,11 +1,16 @@
-function [sol] = solveDif(Nx,POD)
+function [sol] = solveDif(Nx,POD,bc,learn)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     nmr = ~isempty(POD);
     t = 0;
     T = 1.0;
     dt = T/Nx;
-    dt_min = dt;
+    dt_min = T*1e-4;
+    dt_max = T * 1e-1;
+    if ~learn
+        dt = dt_max;
+        dt_min = dt;
+    end
     x0 = zeros(Nx,1);
     X = [x0,x0];
     if nmr
@@ -14,25 +19,23 @@ function [sol] = solveDif(Nx,POD)
         % X decomposition
         Y = backward(X,POD.X);
         X = forward(Y,POD.X);
-        f = figure;
-        f.WindowState = 'maximized';
-        plot(X(:,1));
-        hold on;
-        plot(x0);
+        %         f = figure;
+        %         f.WindowState = 'maximized';
+        %         plot(X(:,1));
+        %         hold on;
+        %         plot(x0);
     end
     kmax = 8;
     D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
     D = D * 1e-1;
     if nmr
-        f = figure;
-        f.WindowState = 'maximized';
-        plot(D);
-        xlim([1,Nx+1]);
-        ylim([0, max(D)*1.1]);
+        %         f = figure;
+        %         f.WindowState = 'maximized';
+        %         plot(D);
+        %         xlim([1,Nx+1]);
+        %         ylim([0, max(D)*1.1]);
     end
     D = D*Nx^2;
-    bc.first = false;
-    bc.val = [1,1];
     crit_conv = 1e-4;
     kmin = 3;
     sol.t = t;
@@ -49,7 +52,7 @@ function [sol] = solveDif(Nx,POD)
             %% residual
             [Rt,Rx] = buildResidual(X,dt,D,bc,POD);
             R = Rt + Rx;
-
+            
             %% Jacobian
             [Jt,Jx] = buildJacobian(X,dt,D,bc,[]);
             J = Jx + + diag(Jt);
@@ -57,27 +60,30 @@ function [sol] = solveDif(Nx,POD)
                 % Galerkin
                 P = GP;
                 % Least-squares Petrov -- Galerkin
-%                 P = J*P;
+                %                 P = J*P;
                 % projection
                 R = P' * R;
                 J = P' * J;
                 % PCA derivative
                 J = J * POD.X.Ut;
             end
-
+            
             %% convergence
-            R_conv = R;
-            delta = norm(R_conv)*dt;
-
-            if delta <= crit_conv
+            delta = norm(R);
+            if k ==1
+                R0 = delta;
+            end
+            
+            if delta <= crit_conv*max(R0,1)
                 t = t+dt;
                 X(:,1) = X(:,2);
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
                 sol.Rx = [sol.Rx, Rx];
-                if nmr
+                if ~learn
                     if k <= kmin
-%                         dt =  dt * 2;
+                        dt =  dt * 2;
+                        dt = min(dt,dt_max);
                     end
                 end
                 break;
@@ -85,7 +91,7 @@ function [sol] = solveDif(Nx,POD)
                 dt = dt / 4;
                 break;
             end
-
+            
             %% linsolve
             [q,r] = qr(J);
             dX = -r\(q'*R);
@@ -93,7 +99,7 @@ function [sol] = solveDif(Nx,POD)
             if is_weak > 0
                 dX(:) = 0;
             end
-
+            
             %% update
             if nmr
                 Y = Y + dX;
