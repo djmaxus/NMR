@@ -9,4 +9,7 @@ function [POD] = doNMR(FOM,fX,fR,fS)
     %% flow derivatives
     POD.Jw = makePOD(FOM.Jw,false,false,fR);
     POD.Jw = makeOblique(fS,POD.Jw);
+    %% Jacobian
+    POD.Jnz = makePOD(FOM.Jnz,true,true,fR);
+    POD.Jnz = makeOblique(fS,POD.Jnz);
 end
