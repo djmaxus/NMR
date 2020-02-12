@@ -27,7 +27,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
     end
     kmax = 8;
     D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
-    D = D * 1e-1;
+    D = D * 1e-2;
     if nmr
         %         f = figure;
         %         f.WindowState = 'maximized';
@@ -41,7 +41,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
     sol.t = t;
     sol.X = X(:,2);
     [~,sol.Rx] = buildResidual(X,dt,D,bc,POD);
-    [~,~,sol.Jw] = buildJacobian(X,dt,D,bc,[]);
+    [~,~,sol.Jnz] = buildJacobian(X,dt,D,bc,[]);
     timer = tic;
     while t < T - dt_min
         dt = min(dt, T-t);
@@ -53,25 +53,23 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             %% residual
             [Rt,Rx] = buildResidual(X,dt,D,bc,POD);
             R = Rt + Rx;
-            
             %% Jacobian
-            [Jt,Jx,Jw] = buildJacobian(X,dt,D,bc,POD);
-            J = Jx + + diag(Jt);
+            [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,POD);
+            J = Jx + diag(Jt);
             if nmr
                 % Galerkin
                 P = GP;
                 % Least-squares Petrov -- Galerkin
-                %                 P = J*P;
+%                 P = J*P;
                 % projection
                 R = P' * R;
                 J = P' * J;
                 % PCA derivative
                 J = J * POD.X.Ut;
             end
-            
             %% convergence
             delta = norm(R);
-            if k ==1
+            if k == 1
                 R0 = delta;
             end
             
@@ -81,7 +79,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
                 sol.Rx = [sol.Rx, Rx];
-                sol.Jw = [sol.Jw, Jw];
+                sol.Jnz = [sol.Jnz, Jnz];
                 if ~learn
                     if k <= kmin
                         dt =  dt * 2;
@@ -97,6 +95,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             %% linsolve
             [q,r] = qr(J);
             dX = -r\(q'*R);
+            
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
             if is_weak > 0
                 dX(:) = 0;

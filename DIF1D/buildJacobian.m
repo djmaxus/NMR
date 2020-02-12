@@ -1,44 +1,47 @@
-function [Jt,Jx,Jw] = buildJacobian(X,dt,D,bc,POD)
+function [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,POD)
     N = size(X,1);
     nmr = ~isempty(POD);
     % time derivative
     Jt = ones(N,1)./dt;
     % flux 
-    Jw = zeros(N+1,2);
-    mask = 1:N+1;
+    
+    Jnz = zeros(3*N-2,1);
+    mask = 1:3*N-2;
     if nmr
-        mask = POD.Jw.idx_mask';
+        mask = POD.Jnz.idx_mask';
     end
     for k = mask
-        % set i,j
-        rj = 1:2;
-        i = k;
-        if k > N + 1
-            i = k - N - 1;
-            rj = 2;
+        if k <= N
+            i = k;
+            j = k;
+        elseif k <= 2*N-1
+            i = k - N;
+            j = i+1;
+        else
+            j = k - 2*N+1;
+            i = j+1;
         end
-        Jw(i,rj) = calcFlux(X(:,2),D,bc,i,rj);
+        if i == j
+            J1 = calcFlux(X(:,2),D,bc,i,2);
+            J2 = calcFlux(X(:,2),D,bc,i+1,1);
+            Jnz(k) = J2 - J1;
+        elseif i < j
+            J2 = calcFlux(X(:,2),D,bc,i+1,2);
+            Jnz(k) = J2;
+        else
+            J1 = calcFlux(X(:,2),D,bc,i,1);
+            Jnz(k) = -J1;
+        end
     end
     if nmr
         % gappy;
-        Jw = [Jw(:,1);Jw(:,2)];
-        Jw = applyOblique(Jw,POD.Jw);
-        Jw = [Jw(1:N+1,1),Jw(N+2:end,1)];
+        Jnz = applyOblique(Jnz,POD.Jnz);
     end
     
-    Jc = zeros(N,1);
-    Ju = zeros(N-1,1);
-    Jd = zeros(N-1,1);
-    for i=1:N
-        if i ~=1
-            Jd(i-1) = -Jw(i,1);
-        end
-        Jc(i) = Jw(i+1,1) - Jw(i,2);
-        if i ~= N
-            Ju(i) = Jw(i+1,2);
-        end
-    end
-    Jw = [Jw(:,1);Jw(:,2)];
+    Jc = Jnz(1:N);
+    Ju = Jnz(N+1:2*N-1);
+    Jd = Jnz(2*N:3*N-2);
+    
     Jx = spalloc(N,N,3*N-2);
     for i=1:N
         if i ~=1
@@ -53,7 +56,7 @@ end
 
 function [J] = calcFlux(X,D,bc,i,rj)
     N = length(X);
-    J = zeros(size(rj));
+    J = zeros(2,1);
     if bc.first
         if i==1
             delta = [bc.val(1),X(i)];
