@@ -4,20 +4,19 @@
 addpath('./DIF1D');
 addpath('./POD');
 clc;
+close all;
 ROM = [];
 
-Nx = 500;
+Nx = 200;
 bc.first = false;
 bc.val = [1,1];
 [dataset] = solveDif(Nx,[],bc,true);
 %% do model reduction
-close all;
 tic;
-[POD] = doNMR(dataset,0.01,0.01,0.2);
+[POD] = doNMR(dataset,0.99,0.99,0.1);
 toc;
 %% perform ROM and compare
-close all;
-bc.val = [1,1];
+bc.val = [2,2];
 [FOM] = solveDif(Nx,[],bc,false);
 [ROM] = solveDif(Nx,POD,bc,false);
 %% plot
@@ -40,7 +39,9 @@ xlim([Tmin Tmax]);
 ylim([1/Nx 1]);
 colorbar;
 colormap jet;
-
+title('FOM');
+xlabel('t');
+ylabel('x');
 if ~isempty(ROM)
     subplot(2,2,3);
     imagesc('CData',ROM.X,'XData',ROM.t,'YData',(1:Nx)./Nx);
@@ -49,21 +50,33 @@ if ~isempty(ROM)
     ylim([1/Nx 1]);
     colorbar;
     colormap jet;
+    title('ROM');
+    xlabel('t');
+    ylabel('x');
 end
 
 subplot(2,2,2);
 plot(FOM.X(:,end));
+xlabel('x');
+ylabel('U');
+title('t = T');
 
 if ~isempty(ROM.X)
     hold on;
     plot(ROM.X(:,end));
     subplot(2,2,4);
+    legend('FOM','ROM');
+    
     enum = abs(ROM.X(:,end) - FOM.X(:,end));
     denom = Xmax - Xmin;
     denom = denom + eq(denom,0);
     res = enum./denom;
     plot(res);
+    xlabel('x');
+    ylabel('\Delta');
+    title('t = T');
 end
+legend('relative error');
 
 speed_up = FOM.timer / ROM.timer;
 disp(['Speed up: ',num2str(speed_up)]);
