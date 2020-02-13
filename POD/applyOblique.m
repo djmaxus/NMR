@@ -3,6 +3,6 @@ function [A] = applyOblique(B,POD)
     %   Detailed explanation goes here
     %   Applies oblique projection assuming there are no initial nor mean value calculated for POD
     A = POD.O * (B-POD.init - POD.mu)+POD.init + POD.mu;
-%     disp(sum(POD.mask'*abs(A-B),'all'));
+    disp(sum(POD.mask'*abs(A-B),'all'));
 %     disp(sum(abs(A-B),'all'));
 end
