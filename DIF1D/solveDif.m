@@ -11,7 +11,8 @@ function [sol] = solveDif(Nx,POD,bc,learn)
         dt = dt_max;
         dt_min = dt;
     end
-    x0 = zeros(Nx,1);
+    %     x0 = zeros(Nx,1);
+    x0 = 0.1 * sin(2*2*pi*(1:Nx)'./Nx);
     X = [x0,x0];
     if nmr
         % Galerkin projection
@@ -19,23 +20,31 @@ function [sol] = solveDif(Nx,POD,bc,learn)
         % X decomposition
         Y = backward(X,POD.X);
         X = forward(Y,POD.X);
-        %         f = figure;
-        %         f.WindowState = 'maximized';
-        %         plot(X(:,1));
-        %         hold on;
-        %         plot(x0);
     end
-    kmax = 8;
+    
     D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
     D = D * 1e-2;
-    if nmr
-        %         f = figure;
-        %         f.WindowState = 'maximized';
-        %         plot(D);
-        %         xlim([1,Nx+1]);
-        %         ylim([0, max(D)*1.1]);
-    end
     D = D*Nx^2;
+    
+    if nmr
+        f = figure;
+        f.WindowState = 'maximized';
+        subplot(2,1,1);
+        plot(X(:,2));
+        title('Initial field');
+        xlabel('x');
+        ylabel('U0');
+        subplot(2,1,2);
+        plot(D);
+        title('Diffusion coefficient');
+        xlabel('x');
+        ylabel('D');
+        xlim([1,Nx+1]);
+        ylim([0, max(D)*1.1]);
+    end
+    
+    
+    kmax = 8;
     crit_conv = 1e-4;
     kmin = 3;
     sol.t = t;
@@ -60,7 +69,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
                 % Galerkin
                 P = GP;
                 % Least-squares Petrov -- Galerkin
-%                 P = J*P;
+                P = J*P;
                 % projection
                 R = P' * R;
                 J = P' * J;
