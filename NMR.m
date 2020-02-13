@@ -7,26 +7,26 @@ clc;
 close all;
 ROM = [];
 
-Nx = 500;
+Nx = 100;
 
-bc.first = false;
-bc.val = [1,1];
+bc.first = true;
+bc.val = [1,-1];
 [dataset] = solveDif(Nx,[],bc,true);
 
 
 
-bc.first = true;
-bc.val = [1,-1];
-[dataset1] = solveDif(Nx,[],bc,true);
-
-figure;
-imagesc('CData',dataset.Rx(:,end-100:end),'XData',dataset.t(:,end-100:end));
-figure;
-imagesc('CData',dataset1.Rx(:,end-100:end),'XData',dataset1.t(:,end-100:end));
-
-dataset.X = [dataset.X,dataset1.X];
-dataset.Rx = [dataset.Rx,dataset1.Rx];
-dataset.Jnz = [dataset.Jnz,dataset1.Jnz];
+% bc.first = true;
+% bc.val = [1,-1];
+% [dataset1] = solveDif(Nx,[],bc,true);
+% 
+% figure;
+% imagesc('CData',dataset.Rx);
+% figure;
+% imagesc('CData',dataset1.Rx(:,end-100:end),'XData',dataset1.t(:,end-100:end));
+% 
+% dataset.X = [dataset.X,dataset1.X];
+% dataset.Rx = [dataset.Rx,dataset1.Rx];
+% dataset.Jnz = [dataset.Jnz,dataset1.Jnz];
 %% do model reduction
 tic;
 [POD] = doNMR(dataset,0.99,0.2,0.2);
