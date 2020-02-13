@@ -47,19 +47,5 @@ function [POD] = makePOD(data, init, mu, param)
     end
     POD.Ut = POD.U(:,1:POD.N);
 
-    %% plot
-    f = figure;
-    f.WindowState = 'maximized';
-    en_frac = diag(POD.S)./sum(diag(POD.S));
-
-    semilogy(en_frac);
-    xlim([1 Nd]);
-
-    hold on;
-    xline(double(POD.N),'-k',num2str(POD.N));
-
-    title('POD');
-    legend('eigen value', ['reduction, frac = ', num2str(param)]);
-    xlabel('Number of POD components');
 %     waitforbuttonpress;
 end
