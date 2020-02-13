@@ -1,8 +1,9 @@
 function [POD] = doNMR(FOM,fX,fR,fS)
     %DONMR Summary of this function goes here
     %   Detailed explanation goes here
+    
     %% X POD
-    POD.X = makePOD(FOM.X,true,false,fX);
+    POD.X = makePOD(FOM.X,true,true,fX);
     %% Residual POD
     POD.Rx = makePOD(FOM.Rx,true,true,fR);
     POD.Rx = makeOblique(fS,POD.Rx);
