@@ -50,7 +50,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
     sol.t = t;
     sol.X = X(:,2);
     [~,sol.Rx] = buildResidual(X,dt,D,bc,POD);
-    [~,~,sol.Jnz] = buildJacobian(X,dt,D,bc,[]);
+    [~,~,sol.Jnz] = buildJacobian(X,dt,D,bc,POD);
     timer = tic;
     while t < T - dt_min
         dt = min(dt, T-t);
@@ -77,7 +77,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
                 J = J * POD.X.Ut;
             end
             %% convergence
-            delta = norm(R);
+            delta = norm(R)*dt;
             if k == 1
                 R0 = delta;
             end
@@ -102,8 +102,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             end
             
             %% linsolve
-            [q,r] = qr(J);
-            dX = -r\(q'*R);
+            dX = J\(-R);
             
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
             if is_weak > 0
