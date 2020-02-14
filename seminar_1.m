@@ -35,7 +35,7 @@ title(['Test sample: ',num2str(test_index),' of ',num2str(size(data.test,2))]);
 waitforbuttonpress;
 %% POD
 uiwait(msgbox('Calculate POD','','modal'));
-POD = makePOD(data.train,0.9);
+POD = makePOD(data.train,true,true,0.9);
 %% set up random masks
 uiwait(msgbox('Mask test data','','modal'));
 mask.frac = 0.1;
