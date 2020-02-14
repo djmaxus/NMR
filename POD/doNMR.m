@@ -15,7 +15,6 @@ function [POD] = doNMR(FOM,fX,fR,fS)
     f.WindowState = 'maximized';
     Nd = 0;
     names = fieldnames(POD);
-    i = 1;
     for basis = {POD.X,POD.Rx,POD.Jnz}
         F = basis{1};
         en_frac = diag(F.S)./sum(diag(F.S));
@@ -25,7 +24,7 @@ function [POD] = doNMR(FOM,fX,fR,fS)
         xlim([1 Nd]);
         
         hold on;
-        plot(F.N,F.S(F.N,F.N));
+        plot(F.N,en_frac(F.N),'o');
           
         hold on;
     end
