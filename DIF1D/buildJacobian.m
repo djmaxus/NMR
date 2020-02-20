@@ -2,7 +2,7 @@ function [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,POD)
     N = size(X,1);
     nmr = ~isempty(POD);
     % time derivative
-    Jt = ones(N,1)./dt;
+    Jt = speye(N)./dt;
     % flux 
     
     Jnz = zeros(3*N-2,1);
