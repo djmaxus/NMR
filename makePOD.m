@@ -16,20 +16,9 @@ function [POD] = makePOD(data, init, mu, param)
     
     %% Substract mean
     if mu
-        %POD.mu = mean(data,2);
+%         POD.mu = mean(data,2);
         POD.mu = median(data,2);
-        % Outlyings
-        rho = zeros(1,size(data,2));
-        for i = 1:length(rho)
-            rho(i) = norm(data(:,i) - POD.mu);
-        end
-        rho = rho./max(rho);
-        figure;
-        semilogy(rho);
-        hold on;
-        yline(quantile(rho,0.9));
         data = data - POD.mu;
-        data = data;
     else
         POD.mu = zeros(size(data(:,1)));
     end
@@ -59,6 +48,4 @@ function [POD] = makePOD(data, init, mu, param)
         end
     end
     POD.Ut = POD.U(:,1:POD.N);
-    
-    %     waitforbuttonpress;
 end
