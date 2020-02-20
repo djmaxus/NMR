@@ -13,5 +13,5 @@ function [O] = oblique(P,basis)
     end
     % generalized matrix inversion
     Mx = V * Sx * U';
-    O = basis * Mx * P';
+    O = sparse(basis * Mx * P');
 end
