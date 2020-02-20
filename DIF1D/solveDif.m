@@ -51,7 +51,8 @@ function [sol] = solveDif(Nx,POD,bc,learn)
     sol.X = X(:,2);
     [~,sol.Rx] = buildResidual(X,dt,D,bc,POD);
     [~,~,sol.Jnz] = buildJacobian(X,dt,D,bc,POD);
-    timer = tic;
+    timer = 0;
+    wb = waitbar(t/T,'Forward problem');
     while t < T - dt_min
         dt = min(dt, T-t);
         X(:,2) = X(:,1);
@@ -60,14 +61,18 @@ function [sol] = solveDif(Nx,POD,bc,learn)
         end
         for k = 1:kmax
             %% residual
+            t_mat_build = tic;
             [Rt,Rx] = buildResidual(X,dt,D,bc,POD);
             R = Rt + Rx;
             %% Jacobian
             [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,POD);
-            J = Jx + diag(Jt);
+            J = Jx + Jt;
+            t_mat_build = toc(t_mat_build);
+            timer = timer + t_mat_build;
             if nmr
                 % Galerkin
                 P = GP;
+                t_projection = tic;
                 % Least-squares Petrov -- Galerkin
                 P = J*P;
                 % projection
@@ -75,7 +80,10 @@ function [sol] = solveDif(Nx,POD,bc,learn)
                 J = P' * J;
                 % PCA derivative
                 J = J * POD.X.Ut;
+                t_projection = toc(t_projection);
+                timer = timer + t_projection;
             end
+            
             %% convergence
             delta = norm(R)*dt;
             if k == 1
@@ -95,6 +103,7 @@ function [sol] = solveDif(Nx,POD,bc,learn)
                         dt = min(dt,dt_max);
                     end
                 end
+                waitbar(t/T,wb);
                 break;
             elseif k == kmax
                 dt = dt / 4;
@@ -102,8 +111,10 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             end
             
             %% linsolve
+            t_lin_solve = tic;
             dX = J\(-R);
-            
+            t_lin_solve = toc(t_lin_solve);
+            timer = timer + t_lin_solve;
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
             if is_weak > 0
                 dX(:) = 0;
@@ -122,6 +133,6 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             break;
         end
     end
-    timer = toc(timer);
     sol.timer = timer;
+    delete(wb);
 end
