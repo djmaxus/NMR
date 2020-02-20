@@ -3,12 +3,12 @@ function [POD] = doNMR(FOM,fX,fR,fS)
     %   Detailed explanation goes here
     
     %% X POD
-    POD.X = makePOD(FOM.X,true,false,fX);
+    POD.X = makePOD(FOM.X,true,true,fX);
     %% Residual POD
-    POD.Rx = makePOD(FOM.Rx,false,true,fR);
+    POD.Rx = makePOD(FOM.Rx,true,true,fR);
     POD.Rx = makeOblique(fS,POD.Rx);
     %% Jacobian
-    POD.Jnz = makePOD(FOM.Jnz,true,false,fR);
+    POD.Jnz = makePOD(FOM.Jnz,false,true,fR);
     POD.Jnz = makeOblique(fS,POD.Jnz);
     
     f = figure;
