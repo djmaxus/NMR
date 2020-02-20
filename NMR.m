@@ -7,7 +7,7 @@ clc;
 close all;
 ROM = [];
 
-Nx = 1000;
+Nx = 200;
 
 bc.first = true;
 bc.val = [1,-1];
@@ -28,7 +28,7 @@ bc.val = [1,-1];
 % dataset.Rx = [dataset.Rx,dataset1.Rx];
 % dataset.Jnz = [dataset.Jnz,dataset1.Jnz];
 %% do model reduction
-[POD] = doNMR(dataset,0.99,0.99,0.2);
+[POD] = doNMR(dataset,0.1,0.1,0.2);
 %% perform ROM and compare
 % bc.first = false;
 % bc.val = [1,1];
