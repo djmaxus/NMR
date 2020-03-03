@@ -8,7 +8,7 @@ function [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,POD)
     Jnz = zeros(3*N-2,1);
     mask = 1:3*N-2;
     if nmr
-        mask = POD.Jnz.idx_mask';
+        mask = POD.idx_mask;
     end
     for k = mask
         if k <= N
@@ -35,7 +35,7 @@ function [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,POD)
     end
     if nmr
         % gappy;
-        Jnz = applyOblique(Jnz,POD.Jnz);
+        Jnz = applyOblique(Jnz,POD);
     end
     
     Jc = Jnz(1:N);

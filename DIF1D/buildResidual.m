@@ -7,7 +7,7 @@ function [Rt,Rx] = buildResidual(X,dt,D,bc,POD)
     %% fluxes
     mask = 1:N;
     if nmr
-        mask = POD.Rx.idx_mask';
+        mask = POD.idx_mask;
     end
     W = zeros(N+1,1);
     for i = mask
@@ -16,7 +16,7 @@ function [Rt,Rx] = buildResidual(X,dt,D,bc,POD)
     end
     Rx = W(2:N+1)-W(1:N);
     if nmr
-        Rx = applyOblique(Rx,POD.Rx);
+        Rx = applyOblique(Rx,POD);
     end
 
 end

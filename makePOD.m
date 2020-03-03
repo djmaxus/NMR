@@ -57,4 +57,5 @@ function [POD] = makePOD(data, init, mu, param)
     X = POD.U * POD.U' * data;
     err = norm(data - X);
     title(num2str(err));
+    drawnow;
 end

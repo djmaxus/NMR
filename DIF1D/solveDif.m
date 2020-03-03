@@ -22,11 +22,19 @@ function [sol] = solveDif(Nx,bc,varargin)
             error('Variable subspace POD.X required');
         end
     end
+    r_pod = lstage == 3;
+    if r_pod
+        PODr = POD.Rx;
+        PODj = POD.Jnz;
+    else
+        PODr = [];
+        PODj = [];
+    end
     %% problem statement
     % time settings
     t = 0;
     T = 1.0;
-    Nt = 100;
+    Nt = round(Nx/10);
     dt = T/Nt;
     dt_min = dt;
     dt_max = dt;
@@ -42,10 +50,11 @@ function [sol] = solveDif(Nx,bc,varargin)
     end
 
     % paramter distribution
-    aD = 0.5 * 1e-2;
+    aD = 0.5;
     pD = 2;
     dD = 1;
     D = aD * sin(pD*2*pi*(1:Nx+1)'./(Nx+1)) + dD;
+    D = D * 1e-2;
     % space discretization
     D = D*Nx^2;
     
@@ -69,7 +78,7 @@ function [sol] = solveDif(Nx,bc,varargin)
     %% convergence parameters
     kmax = 8;
     kmin = 3;
-    crit_conv = 1e-3;
+    crit_conv = 1e-4;
     %% dataset initialization
     sol.t = [];
     sol.X = [];
@@ -86,20 +95,21 @@ function [sol] = solveDif(Nx,bc,varargin)
             X(:,2) = X(:,1);
         else
             Y(:,2) = Y(:,1);
-            X(:,1) = forward(Y(:,1),POD.X);
+            X = forward(Y(:,1),POD.X);
+            X = [X,X];
         end
         sol.t = [sol.t,t];
         sol.X = [sol.X,X(:,1)];
         for k = 1:kmax
             %% residual
-            t_mat_build = tic;
             if v_pod
                 X(:,2) = forward(Y(:,2),POD.X);
             end
-            [Rt,Rx] = buildResidual(X,dt,D,bc,[]);
+            t_mat_build = tic;
+            [Rt,Rx] = buildResidual(X,dt,D,bc,PODr);
             R = Rt + Rx;
             %% Jacobian
-            [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,[]);
+            [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,PODj);
             J = Jx + Jt;
             t_mat_build = toc(t_mat_build);
             timer = timer + t_mat_build;
@@ -111,24 +121,26 @@ function [sol] = solveDif(Nx,bc,varargin)
             % LSPG
             if v_pod
                 t_projection = tic;
-                J = J * GP;
+                J = J * GP; 
                 t_projection = toc(t_projection);
                 timer = timer + t_projection;
             end
+            R = J' * R;
             
             %% convergence
             delta = norm(R)*dt;
             if k == 1
                 R0 = delta;
             end
-            
-            if delta <= crit_conv*max(R0,1)
+            is_converged = delta <= crit_conv*max(R0,1);
+%             is_converged = or(is_converged,delta <= crit_conv);
+            if is_converged
                 t = t+dt;
-                X(:,1) = X(:,2);
-                sol.t = [sol.t,t];
-                sol.X = [sol.X,X(:,2)];
-%                 sol.Rx = [sol.Rx, Rx];
-%                 sol.Jnz = [sol.Jnz, Jnz];
+                if v_pod
+                    Y(:,1) = Y(:,2);
+                else
+                    X(:,1) = X(:,2);
+                end               
                 % timestep increase
                 if k <= kmin
                     dt =  dt * 2;
@@ -144,7 +156,7 @@ function [sol] = solveDif(Nx,bc,varargin)
             %% linsolve
             t_lin_solve = tic;
             [Qj,Rj] = qr(J'*J);
-            dX = Rj \ (-Qj'*J'*R);
+            dX = Rj \ (-Qj'* R);
             t_lin_solve = toc(t_lin_solve);
             timer = timer + t_lin_solve;
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
@@ -159,7 +171,7 @@ function [sol] = solveDif(Nx,bc,varargin)
                 X(:,2) = X(:,2) + dX;
             end
         end
-        if dt < dt_min
+        if dt + 1e-10 < dt_min
             error(['not converged, residual = ',num2str(delta)]);
             break;
         end
