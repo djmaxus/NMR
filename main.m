@@ -28,10 +28,13 @@ POD.Jnz = makePOD(data_2.Jnz,true,true,nJ);
 nR = 0.1;
 nR = max(nR,POD.Rx.N/Nx);
 POD.Rx = makeOblique(nR,POD.Rx);
+disp(norm(POD.Rx.O * data_2.Rx - data_2.Rx));
 
 nJ = 0.1;
 nJ = max(nJ,POD.Jnz.N/Nx / 3);
 POD.Jnz = makeOblique(nJ,POD.Jnz);
+disp(norm(POD.Jnz.O * data_2.Jnz - data_2.Jnz));
+
 %% offline stage
 
 % III: offline operators calculation
