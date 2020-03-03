@@ -16,36 +16,45 @@ function [POD] = makePOD(data, init, mu, param)
     
     %% Substract mean
     if mu
-%         POD.mu = mean(data,2);
-        POD.mu = median(data,2);
+        POD.mu = mean(data,2);
         data = data - POD.mu;
     else
         POD.mu = zeros(size(data(:,1)));
     end
     
-    
-    %% calculate variance
-    POD.sigma = sqrt(var(data,1,2));
-    POD.sigma = POD.sigma + eq(POD.sigma,0);
-    %     data = data ./ POD.sigma;
-    
     %% Crop Data
-    cropData;
+    %     cropData;
     %% SVD
-    [POD.U,POD.S,POD.V] = svd(data,'econ');
+    [POD.U,S,~] = svd(data,'econ');
     Nd = size(POD.U,2);
-    if and(isinteger(param), param > 1)
-        POD.N = min(param,Nd);
+    if param > 1
+        POD.N = min(round(param),Nd);
+    elseif param > 0.5
+        POD.N = eigEnNum(diag(S),param);
+    elseif param > 0
+        POD.N = round(param*Nd);
     else
-        if param <= 0
-            error('incorrect parameter');
-        elseif param < 0.5
-            POD.N = round(param*Nd);
-        elseif param <= 1
-            POD.N = eigEnNum(diag(POD.S),param);
-        else
-            error('incorrect parameter');
-        end
+        error('incorrect parameter');
     end
-    POD.Ut = POD.U(:,1:POD.N);
+    %% visualize
+    f = figure;
+    f.WindowState = 'maximized';
+    % dataset
+    plot(POD.init,'b-','LineWidth',0.01);
+    hold on;
+    for i = 1:size(data,2)
+        plot(POD.init + data(:,i),'k-','LineWidth',0.01);
+        hold on;
+    end
+    % principal components
+    U = POD.U;
+    for i = 1:POD.N
+        plot(POD.init + U(:,i),'r-','LineWidth',1.0);
+        hold on;
+    end
+    hold off;
+    % reconstruction error
+    X = POD.U * POD.U' * data;
+    err = norm(data - X);
+    title(num2str(err));
 end
