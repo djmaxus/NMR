@@ -1,85 +1,117 @@
-function [sol] = solveDif(Nx,POD,bc,learn)
+function [sol] = solveDif(Nx,bc,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
-    nmr = ~isempty(POD);
+    %% argument unpacking
+    if length(varargin) >= 1
+        lstage = varargin{1};
+    else
+        lstage = 0;
+    end
+    if length(varargin) >= 2
+        POD = varargin{2};
+    else
+        POD = [];
+    end
+    %% stage requirements check
+    v_pod = lstage > 1;
+    if lstage == 2
+        if isempty(POD)
+            error('Variable subspace POD.X required');
+        end
+        if isempty(POD.X)
+            error('Variable subspace POD.X required');
+        end
+    end
+    %% problem statement
+    % time settings
     t = 0;
     T = 1.0;
-    dt = T/Nx;
-    dt_min = T*1e-4;
-    dt_max = T * 1e-1;
-    if ~learn
-        dt = dt_max;
-        dt_min = dt;
+    Nt = 100;
+    dt = T/Nt;
+    dt_min = dt;
+    dt_max = dt;
+    % initial condition
+    if ~v_pod
+        a = 0.1;
+        p = 2;
+        x0 = a * sin(p*2*pi*(1:Nx)'./Nx);
+        X = [x0,x0];
+    else
+        Y = zeros(POD.X.N,2);
+        GP = POD.X.U(:,1:POD.X.N);
     end
-    %     x0 = zeros(Nx,1);
-    x0 = 0.1 * sin(2*2*pi*(1:Nx)'./Nx);
-    X = [x0,x0];
-    if nmr
-        % Galerkin projection
-        GP = POD.X.Ut;
-        % X decomposition
-        Y = backward(X,POD.X);
-        X = forward(Y,POD.X);
-    end
-    
-    D = 0.5 * sin(2*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
-    D = D * 1e-2;
+
+    % paramter distribution
+    aD = 0.5 * 1e-2;
+    pD = 2;
+    dD = 1;
+    D = aD * sin(pD*2*pi*(1:Nx+1)'./(Nx+1)) + dD;
+    % space discretization
     D = D*Nx^2;
     
-    if nmr
-        f = figure;
-        f.WindowState = 'maximized';
-        subplot(2,1,1);
-        plot(X(:,2));
-        title('Initial field');
-        xlabel('x');
-        ylabel('U0');
-        subplot(2,1,2);
-        plot(D);
-        title('Diffusion coefficient');
-        xlabel('x');
-        ylabel('D');
-        xlim([1,Nx+1]);
-        ylim([0, max(D)*1.1]);
-    end
+%     if v_pod
+%         f = figure;
+%         f.WindowState = 'maximized';
+%         subplot(2,1,1);
+%         plot(X(:,2));
+%         title('Initial field');
+%         xlabel('x');
+%         ylabel('U0');
+%         subplot(2,1,2);
+%         plot(D);
+%         title('Diffusion coefficient');
+%         xlabel('x');
+%         ylabel('D');
+%         xlim([1,Nx+1]);
+%         ylim([0, max(D)*1.1]);
+%     end
     
-    
+    %% convergence parameters
     kmax = 8;
-    crit_conv = 1e-4;
     kmin = 3;
-    sol.t = t;
-    sol.X = X(:,2);
-    [~,sol.Rx] = buildResidual(X,dt,D,bc,POD);
-    [~,~,sol.Jnz] = buildJacobian(X,dt,D,bc,POD);
-    timer = 0;
+    crit_conv = 1e-3;
+    %% dataset initialization
+    sol.t = [];
+    sol.X = [];
+    if lstage == 2
+        sol.Rx = [];
+        sol.Jnz = [];
+    end
     wb = waitbar(t/T,'Forward problem');
-    while t < T - dt_min
+    timer = 0;
+    while t < T
         dt = min(dt, T-t);
-        X(:,2) = X(:,1);
-        if nmr
-            Y = backward(X(:,2),POD.X);
+        
+        if ~v_pod
+            X(:,2) = X(:,1);
+        else
+            Y(:,2) = Y(:,1);
+            X(:,1) = forward(Y(:,1),POD.X);
         end
+        sol.t = [sol.t,t];
+        sol.X = [sol.X,X(:,1)];
         for k = 1:kmax
             %% residual
             t_mat_build = tic;
-            [Rt,Rx] = buildResidual(X,dt,D,bc,POD);
+            if v_pod
+                X(:,2) = forward(Y(:,2),POD.X);
+            end
+            [Rt,Rx] = buildResidual(X,dt,D,bc,[]);
             R = Rt + Rx;
             %% Jacobian
-            [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,POD);
+            [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,[]);
             J = Jx + Jt;
             t_mat_build = toc(t_mat_build);
             timer = timer + t_mat_build;
-            if nmr
-                % Galerkin
-                P = GP;
+            % collect residual snapshots
+            if lstage == 2
+                sol.Rx = [sol.Rx,Rx];
+                sol.Jnz = [sol.Jnz,Jnz];
+            end
+            % LSPG
+            if v_pod
                 t_projection = tic;
-                % Least-squares Petrov -- Galerkin
-                P = J*P;
-                % projection
-                R = P' * R;
-                J = P' * J;
-                % PCA derivative
-                J = J * POD.X.Ut;
+                J = J * GP;
                 t_projection = toc(t_projection);
                 timer = timer + t_projection;
             end
@@ -95,13 +127,12 @@ function [sol] = solveDif(Nx,POD,bc,learn)
                 X(:,1) = X(:,2);
                 sol.t = [sol.t,t];
                 sol.X = [sol.X,X(:,2)];
-                sol.Rx = [sol.Rx, Rx];
-                sol.Jnz = [sol.Jnz, Jnz];
-                if ~learn
-                    if k <= kmin
-                        dt =  dt * 2;
-                        dt = min(dt,dt_max);
-                    end
+%                 sol.Rx = [sol.Rx, Rx];
+%                 sol.Jnz = [sol.Jnz, Jnz];
+                % timestep increase
+                if k <= kmin
+                    dt =  dt * 2;
+                    dt = min(dt,dt_max);
                 end
                 waitbar(t/T,wb);
                 break;
@@ -112,7 +143,8 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             
             %% linsolve
             t_lin_solve = tic;
-            dX = J\(-R);
+            [Qj,Rj] = qr(J'*J);
+            dX = Rj \ (-Qj'*J'*R);
             t_lin_solve = toc(t_lin_solve);
             timer = timer + t_lin_solve;
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
@@ -121,9 +153,8 @@ function [sol] = solveDif(Nx,POD,bc,learn)
             end
             
             %% update
-            if nmr
-                Y = Y + dX;
-                X(:,2) = forward(Y,POD.X);
+            if v_pod
+                Y(:,2) = Y(:,2) + dX;
             else
                 X(:,2) = X(:,2) + dX;
             end
