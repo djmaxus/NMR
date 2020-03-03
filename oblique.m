@@ -4,7 +4,7 @@ function [O] = oblique(P,basis)
     %% operator to inverse
     M = P' * basis;
     % SVD
-    [U,S,V] = svd(M);
+    [U,S,V] = svd(M,'econ');
     % inverse S matrix
     diagS = 1./ diag(S);
     Sx = zeros(size(S'));
