@@ -2,7 +2,7 @@ function [POD] = makeOblique(frac,POD)
     %MAKEOBLIQUE Summary of this function goes here
     %   Detailed explanation goes here
     %% greedy mask
-    Nx = size(POD.U,1);
+    Nx = min(size(POD.U));
     Nm = round(frac*Nx);
     Nm = max(Nm,POD.N);
     mask = greedy(POD.U(:,1:Nm));
@@ -35,5 +35,5 @@ function [POD] = makeOblique(frac,POD)
     POD.mask = mask;
     POD.idx_mask = idx_mask;
     %% calculate oblique projector
-    POD.O = oblique(mask,POD.Ut);
+    POD.O = oblique(mask,POD.U(:,1:POD.N));
 end
