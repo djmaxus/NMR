@@ -43,19 +43,19 @@ function [POD] = makePOD(data, init, mu, param)
     plot(POD.init,'b-','LineWidth',0.01);
     hold on;
     for i = 1:size(data,2)
-        plot(POD.init + data(:,i),'k-','LineWidth',0.01);
+        plot(POD.init + POD.mu + data(:,i),'k-','LineWidth',0.01);
         hold on;
     end
     % principal components
-    U = POD.U;
+    U = POD.U*sqrt(S);
     for i = 1:POD.N
-        plot(POD.init + U(:,i),'r-','LineWidth',1.0);
+        plot(POD.init + POD.mu + U(:,i),'r-','LineWidth',1.0);
         hold on;
     end
     hold off;
     % reconstruction error
     X = POD.U * POD.U' * data;
     err = norm(data - X);
-    title(num2str(err));
+    title(['Reconstruction error: ',num2str(err)]);
     drawnow;
 end
