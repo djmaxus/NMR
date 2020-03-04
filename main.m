@@ -41,5 +41,3 @@ for Nx = grids
     title('Speed-up plot');
     drawnow;
 end
-
-
