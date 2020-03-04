@@ -17,7 +17,7 @@ val = rand(1,2) * 2 * pMax - pMax;
 Ng = 10;
 grids = round(logspace(log10(100),log10(10000),Ng));
 sval = [];
-for Nx = grids
+for Nx = grids  
     %% problem
     setProblem;
     
@@ -29,10 +29,13 @@ for Nx = grids
     [FOM] = solveDif(Nx,bc,D);
     [ROM] = solveDif(Nx,bc,D,3,POD);
     plotNMR;
+    
+    %% speed-up plot
     sval = [sval,speed_up];
-    if exist('fs','var')
-        close(fs);
-    end
+%     if exist('fs','var')
+%         close(fs);
+%     end
+    close all;
     fs = figure;
     fs.WindowState = 'maximized';
     semilogx(grids(1:length(sval)),sval,'--o');
