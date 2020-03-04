@@ -1,4 +1,4 @@
-function [sol] = solveDif(Nx,bc,varargin)
+function [sol] = solveDif(Nx,bc,D,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     %% argument unpacking
@@ -34,7 +34,8 @@ function [sol] = solveDif(Nx,bc,varargin)
     % time settings
     t = 0;
     T = 1.0;
-    Nt = round(Nx/10);
+%     Nt = round(Nx/10);
+    Nt = 100;
     dt = T/Nt;
     dt_min = dt;
     dt_max = dt;
@@ -46,15 +47,12 @@ function [sol] = solveDif(Nx,bc,varargin)
         X = [x0,x0];
     else
         Y = zeros(POD.X.N,2);
+        X = zeros(Nx,2);
         GP = POD.X.U(:,1:POD.X.N);
     end
 
     % paramter distribution
-    aD = 0.5;
-    pD = 2;
-    dD = 1;
-    D = aD * sin(pD*2*pi*(1:Nx+1)'./(Nx+1)) + dD;
-    D = D * 1e-2;
+    
     % space discretization
     D = D*Nx^2;
     
@@ -95,8 +93,7 @@ function [sol] = solveDif(Nx,bc,varargin)
             X(:,2) = X(:,1);
         else
             Y(:,2) = Y(:,1);
-            X = forward(Y(:,1),POD.X);
-            X = [X,X];
+            X(:,1) = forward(Y(:,1),POD.X);
         end
         sol.t = [sol.t,t];
         sol.X = [sol.X,X(:,1)];
@@ -173,7 +170,6 @@ function [sol] = solveDif(Nx,bc,varargin)
         end
         if dt + 1e-10 < dt_min
             error(['not converged, residual = ',num2str(delta)]);
-            break;
         end
     end
     sol.timer = timer;
