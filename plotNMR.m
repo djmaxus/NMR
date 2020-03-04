@@ -34,28 +34,38 @@ if ~isempty(ROM)
     ylabel('x');
 end
 
+%% Diffusion
 subplot(2,2,2);
-plot(FOM.X(:,end));
+plot(D);
+xlim([0,length(D)]);
+ylim([0,max(D)]);
 xlabel('x');
-ylabel('U');
-title('t = T');
+ylabel('$D_0$','interpreter','latex');
+title('Diffusion coefficient $D_0$','interpreter','latex');
+
+% subplot(2,2,2);
+% plot(FOM.X(:,end));
+% xlabel('x');
+% ylabel('U');
+% title('t = T');
 
 if ~isempty(ROM.X)
-    hold on;
-    plot(ROM.X(:,end));
-    legend('FOM','ROM');
+%     hold on;
+%     plot(ROM.X(:,end));
+%     legend('FOM','ROM');
     
     subplot(2,2,4);
-    enum = abs(ROM.X(:,end) - FOM.X(:,end));
-    denom = Xmax - Xmin;
+    enum = abs(ROM.X - FOM.X);
+    denom = 1;...Xmax - Xmin;
     denom = denom + eq(denom,0);
-    res = enum./denom;
-    plot(res);
-    xlabel('x');
+    res = enum./denom./size(enum,1);
+    res = sum(res.^2,1);
+    plot(sqrt(res));
+    xlabel('t');
     ylabel('\Delta');
-    title('t = T');
+    title('$$MSE(t)$$','interpreter','latex');
 end
-legend('relative error');
+legend('MSE');
 
 speed_up = FOM.timer / ROM.timer;
 sms = ['Speed up: ',num2str(speed_up)];
