@@ -1,12 +1,12 @@
 %% Diffusion
 % amplitude
-aD = 0.5;
+aD = 0.9;
 % period number
-pD = 2;
+pD = 1;
 % distribution
 D = aD * sin(pD*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
 % scale
-D = D * 1e-2;
+D = D * 0.5e-1;
 
 % boundary condition type
-bc.first = true;
+bc.first = false;
