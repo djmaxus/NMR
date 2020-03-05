@@ -14,7 +14,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     end
     if length(varargin) >= 5
         vals = varargin{3};
-        grid = varargin{4};
+        nV = varargin{4};
         val = varargin{5};
     end
     %% stage requirements check
@@ -89,7 +89,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     wb = waitbar(t,'Forward problem');
     timer = 0;
     R0 = 1;
-    k_all = 0;
+    k_all = [];
     while t < 1
         dt = min(dt, 1-t);
         
@@ -104,8 +104,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 for j = 1:length(POD.X.data)
                     Xp(:,j) = POD.X.data{j}.X(:,t_ind+1);
                 end
-                Yp = backward(Xp - X(:,1),POD.X);
-                Y(:,2) = Y(:,2) + interpTriang(val,vals,grid,Yp')';
+                Yp = backward(Xp,POD.X);
+                Y(:,2) = interpTriang(val,vals,Yp(:,nV)')';
             end
         end
 %         if r_pod
@@ -145,14 +145,14 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             R = J' * R;
             
             %% convergence
-            delta = norm(R)*dt;
+            delta = norm(R);
             if k == 1
                 R0 = delta;
             end
             is_converged = delta <= crit_conv*max(R0,1);
             %             is_converged = or(is_converged,delta <= crit_conv);
             if is_converged
-                k_all = k_all + k;
+                k_all = [k_all,k];
                 t = t+dt;
                 if v_pod
                     Y(:,1) = Y(:,2);
@@ -195,7 +195,9 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     end
     sol.t = [sol.t,t];
     sol.X = [sol.X,X(:,1)];
-    sol.k_avg = k_all/(length(POD.X.data{1}.t)-1);
+    if lstage >= 2
+        sol.k_avg = mean(k_all);
+    end
     sol.timer = timer;
     delete(wb);
 end

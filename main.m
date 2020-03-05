@@ -11,14 +11,11 @@ pMax = 1;
 setParSample;
 
 % boundary condition test value
-val = rand(1,2) * 2 * pMax - pMax;
-DG = delaunayn(vals);
-F = sin(0.5 * vals(:,1) + vals(:,2)* 0.5);
-Ftest= interpTriang(val,vals,DG,F);
+
 %% grid
 Nt = 100;
 Ng = 1;
-grids = round(logspace(log10(1000),log10(1000),Ng));
+grids = round(logspace(log10(5000),log10(5000),Ng));
 sval = zeros(Ng,1);
 fs = figure;
 for iG = 1:Ng  
@@ -30,12 +27,21 @@ for iG = 1:Ng
     reduceAll;
     
     %% online stage
+    val = rand(1,2) * 2 * pMax - pMax;
+    [nV,xV] = findSimplex(val,vals);
     bc.val = val;
     [FOM] = solveDif(Nx,Nt,bc,D);
-    [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
-    disp(ROM.k_avg);
-    [ROM] = solveDif(Nx,Nt,bc,D,3,POD,vals,DG,val);
-    plotNMR;
+    try
+        [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
+        disp(['iters per step: ',num2str(ROM.k_avg)]);
+        plotNMR;
+    end
+    
+    try
+        [ROM] = solveDif(Nx,Nt,bc,D,3,POD,xV,nV,val);
+        disp(['iters per step: ',num2str(ROM.k_avg)]);
+        plotNMR;
+    end
     
     %% speed-up plot
     sval(iG) = speed_up;
