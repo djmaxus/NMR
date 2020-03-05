@@ -4,7 +4,7 @@ data = cell(Ns,1);
 parfor i = 1:Ns
     bc_i = bc;
     bc_i.val = vals(i,:);
-    [data{i}] = solveDif(Nx,bc_i,D,2,POD);
+    [data{i}] = solveDif(Nx,Nt,bc_i,D,2,POD);
     fprintf([num2str(i),' ']);
 end
 fprintf('\n');
