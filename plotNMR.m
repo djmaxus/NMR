@@ -36,11 +36,11 @@ end
 
 %% Diffusion
 subplot(2,2,2);
-plot(D);
-xlim([0,length(D)]);
-ylim([0,max(D)]);
-xlabel('x');
-ylabel('$D_0$','interpreter','latex');
+plot(D(1:Nx),(1:Nx)./Nx);
+ylim([0,1]);
+xlim([0,max(D)]);
+ylabel('x');
+xlabel('$D_0$','interpreter','latex');
 title('Diffusion coefficient $D_0(x)$','interpreter','latex');
 
 % subplot(2,2,2);
@@ -60,7 +60,7 @@ if ~isempty(ROM.X)
     denom = denom + eq(denom,0);
     res = enum./denom;
     res = sum(res.^2,1)./size(enum,1);
-    plot(100*sqrt(res));
+    plot((1:Nt)./Nt,100*sqrt(res));
     xlabel('t');
     ylabel('\Delta, %');
     title('Relatve $$MSE(t)$$','interpreter','latex');
