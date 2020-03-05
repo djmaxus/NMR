@@ -41,7 +41,7 @@ xlim([0,length(D)]);
 ylim([0,max(D)]);
 xlabel('x');
 ylabel('$D_0$','interpreter','latex');
-title('Diffusion coefficient $D_0$','interpreter','latex');
+title('Diffusion coefficient $D_0(x)$','interpreter','latex');
 
 % subplot(2,2,2);
 % plot(FOM.X(:,end));
@@ -56,16 +56,16 @@ if ~isempty(ROM.X)
     
     subplot(2,2,4);
     enum = abs(ROM.X - FOM.X);
-    denom = 1;...Xmax - Xmin;
+    denom = 3*sqrt(var(FOM.X,[],'all'));
     denom = denom + eq(denom,0);
-    res = enum./denom./size(enum,1);
-    res = sum(res.^2,1);
-    plot(sqrt(res));
+    res = enum./denom;
+    res = sum(res.^2,1)./size(enum,1);
+    plot(100*sqrt(res));
     xlabel('t');
-    ylabel('\Delta');
-    title('$$MSE(t)$$','interpreter','latex');
+    ylabel('\Delta, %');
+    title('Relatve $$MSE(t)$$','interpreter','latex');
 end
-legend('MSE');
+legend('Relative MSE');
 
 speed_up = FOM.timer / ROM.timer;
 sms = ['Speed up: ',num2str(speed_up)];
