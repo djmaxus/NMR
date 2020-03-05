@@ -1,4 +1,4 @@
-function [sol] = solveDif(Nx,bc,D,varargin)
+function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     %% argument unpacking
@@ -33,10 +33,7 @@ function [sol] = solveDif(Nx,bc,D,varargin)
     %% problem statement
     % time settings
     t = 0;
-    T = 1.0;
-    %     Nt = round(Nx/10);
-    Nt = 100;
-    dt = T/Nt;
+    dt = 1/Nt;
     dt_min = dt;
     dt_max = dt;
     % initial condition
@@ -84,11 +81,11 @@ function [sol] = solveDif(Nx,bc,D,varargin)
         sol.Rx = [];
         sol.Jnz = [];
     end
-    wb = waitbar(t/T,'Forward problem');
+    wb = waitbar(t,'Forward problem');
     timer = 0;
     R0 = 1;
-    while t < T
-        dt = min(dt, T-t);
+    while t < 1
+        dt = min(dt, 1-t);
         
         if ~v_pod
             X(:,2) = X(:,1);
@@ -156,7 +153,7 @@ function [sol] = solveDif(Nx,bc,D,varargin)
                     dt =  dt * 2;
                     dt = min(dt,dt_max);
                 end
-                waitbar(t/T,wb);
+                waitbar(t/1,wb);
                 break;
             elseif k == kmax
                 dt = dt / 4;

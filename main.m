@@ -14,8 +14,9 @@ setParSample;
 val = rand(1,2) * 2 * pMax - pMax;
 
 %% grid
+Nt = 100;
 Ng = 1;
-grids = round(logspace(log10(5000),log10(5000),Ng));
+grids = round(logspace(log10(500),log10(500),Ng));
 sval = [];
 fs = figure;
 for Nx = grids  
@@ -27,8 +28,8 @@ for Nx = grids
     
     %% online stage
     bc.val = val;
-    [FOM] = solveDif(Nx,bc,D);
-    [ROM] = solveDif(Nx,bc,D,3,POD);
+    [FOM] = solveDif(Nx,Nt,bc,D);
+    [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
     plotNMR;
     
     %% speed-up plot
