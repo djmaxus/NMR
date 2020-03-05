@@ -56,3 +56,4 @@ for iG = 1:Ng
     title('Speed-up plot');
     drawnow;
 end
+save('./log/last');
