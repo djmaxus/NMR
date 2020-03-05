@@ -1,9 +1,10 @@
 function [idx, P] = greedy(basis,n)
-    idx = [];
-    P = [];
+    idx = zeros(1,n);
+    P = spalloc(size(basis,1),n,n);
     n = max(n,size(basis,2));
     N = size(basis,1);
     Nr = size(basis,2);
+    nt = 0;
     for i = 1:Nr
         if i < mod(n,Nr) + 1
             ni = floor(n/Nr) + 1;
@@ -20,6 +21,7 @@ function [idx, P] = greedy(basis,n)
             er = M * basis(:,i);
         end
         for j = 1:ni
+            nt = nt+1;
             cost = abs(er);
             [~,idx_cur] = sort(cost,'descend');
             for k = idx_cur'
@@ -34,11 +36,9 @@ function [idx, P] = greedy(basis,n)
                     break;
                 end
             end
-            idx = [idx,k];
-            dP = zeros(N,1);
-            dP(k) = 1;
-            P = [P,dP];
-        end
+            idx(nt) = k;
+            P(k,nt) = 1;
+        end 
     end
 end
 
