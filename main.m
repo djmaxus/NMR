@@ -15,8 +15,8 @@ val = rand(1,2) * 2 * pMax - pMax;
 
 %% grid
 Nt = 100;
-Ng = 3;
-grids = round(logspace(log10(100),log10(500),Ng));
+Ng = 1;
+grids = round(logspace(log10(5000),log10(5000),Ng));
 sval = zeros(Ng,1);
 fs = figure;
 for iG = 1:Ng  
@@ -40,7 +40,7 @@ for iG = 1:Ng
     end
     fs = figure;
     fs.WindowState = 'maximized';
-    semilogx(grids,sval,'--o');
+    semilogx(grids(1:iG),sval(1:iG),'--o');
     xlabel('Grid size');
     ylabel('Speed-up');
     title('Speed-up plot');
