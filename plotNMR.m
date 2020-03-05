@@ -62,7 +62,7 @@ if ~isempty(ROM.X)
     denom = denom + eq(denom,0);
     res = enum./denom;
     res = sum(res.^2,1)./size(enum,1);
-    plot((1:Nt)./Nt,100*sqrt(res));
+    plot((1:Nt+1)./Nt,100*sqrt(res));
     xlim([0,1]);
     xlabel('t');
     ylabel('\Delta, %');
