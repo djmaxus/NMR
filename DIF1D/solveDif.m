@@ -34,14 +34,14 @@ function [sol] = solveDif(Nx,bc,D,varargin)
     % time settings
     t = 0;
     T = 1.0;
-%     Nt = round(Nx/10);
+    %     Nt = round(Nx/10);
     Nt = 100;
     dt = T/Nt;
     dt_min = dt;
     dt_max = dt;
     % initial condition
     if ~v_pod
-        a = 0.1;
+        a = 1.0;
         p = 2;
         x0 = a * sin(p*2*pi*(1:Nx)'./Nx);
         X = [x0,x0];
@@ -50,28 +50,28 @@ function [sol] = solveDif(Nx,bc,D,varargin)
         X = zeros(Nx,2);
         GP = POD.X.U(:,1:POD.X.N);
     end
-
+    
     % paramter distribution
     
     % space discretization
     D = D*Nx^2;
     
-%     if v_pod
-%         f = figure;
-%         f.WindowState = 'maximized';
-%         subplot(2,1,1);
-%         plot(X(:,2));
-%         title('Initial field');
-%         xlabel('x');
-%         ylabel('U0');
-%         subplot(2,1,2);
-%         plot(D);
-%         title('Diffusion coefficient');
-%         xlabel('x');
-%         ylabel('D');
-%         xlim([1,Nx+1]);
-%         ylim([0, max(D)*1.1]);
-%     end
+    %     if v_pod
+    %         f = figure;
+    %         f.WindowState = 'maximized';
+    %         subplot(2,1,1);
+    %         plot(X(:,2));
+    %         title('Initial field');
+    %         xlabel('x');
+    %         ylabel('U0');
+    %         subplot(2,1,2);
+    %         plot(D);
+    %         title('Diffusion coefficient');
+    %         xlabel('x');
+    %         ylabel('D');
+    %         xlim([1,Nx+1]);
+    %         ylim([0, max(D)*1.1]);
+    %     end
     
     %% convergence parameters
     kmax = 8;
@@ -86,6 +86,7 @@ function [sol] = solveDif(Nx,bc,D,varargin)
     end
     wb = waitbar(t/T,'Forward problem');
     timer = 0;
+    R0 = 1;
     while t < T
         dt = min(dt, T-t);
         
@@ -95,6 +96,12 @@ function [sol] = solveDif(Nx,bc,D,varargin)
             Y(:,2) = Y(:,1);
             X(:,1) = forward(Y(:,1),POD.X);
         end
+%         if r_pod
+%             if t==0
+%                 PODr = [];
+%                 PODj = [];
+%             end
+%         end
         sol.t = [sol.t,t];
         sol.X = [sol.X,X(:,1)];
         for k = 1:kmax
@@ -103,7 +110,7 @@ function [sol] = solveDif(Nx,bc,D,varargin)
                 X(:,2) = forward(Y(:,2),POD.X);
             end
             t_mat_build = tic;
-            [Rt,Rx] = buildResidual(X,dt,D,bc,PODr);
+            [Rt,Rx,W] = buildResidual(X,dt,D,bc,PODr);
             R = Rt + Rx;
             %% Jacobian
             [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,PODj);
@@ -112,13 +119,13 @@ function [sol] = solveDif(Nx,bc,D,varargin)
             timer = timer + t_mat_build;
             % collect residual snapshots
             if lstage == 2
-                sol.Rx = [sol.Rx,Rx];
+                sol.Rx = [sol.Rx,W];
                 sol.Jnz = [sol.Jnz,Jnz];
             end
             % LSPG
             if v_pod
                 t_projection = tic;
-                J = J * GP; 
+                J = J * GP;
                 t_projection = toc(t_projection);
                 timer = timer + t_projection;
             end
@@ -130,14 +137,20 @@ function [sol] = solveDif(Nx,bc,D,varargin)
                 R0 = delta;
             end
             is_converged = delta <= crit_conv*max(R0,1);
-%             is_converged = or(is_converged,delta <= crit_conv);
+            %             is_converged = or(is_converged,delta <= crit_conv);
             if is_converged
+%                 if r_pod
+%                     if t==0
+%                         PODr = POD.Rx;
+%                         PODj = POD.Jnz;
+%                     end
+%                 end
                 t = t+dt;
                 if v_pod
                     Y(:,1) = Y(:,2);
                 else
                     X(:,1) = X(:,2);
-                end               
+                end
                 % timestep increase
                 if k <= kmin
                     dt =  dt * 2;
