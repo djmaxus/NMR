@@ -14,9 +14,10 @@ setParSample;
 val = rand(1,2) * 2 * pMax - pMax;
 
 %% grid
-Ng = 10;
-grids = round(logspace(log10(100),log10(10000),Ng));
+Ng = 1;
+grids = round(logspace(log10(5000),log10(5000),Ng));
 sval = [];
+fs = figure;
 for Nx = grids  
     %% problem
     setProblem;
@@ -32,10 +33,9 @@ for Nx = grids
     
     %% speed-up plot
     sval = [sval,speed_up];
-%     if exist('fs','var')
-%         close(fs);
-%     end
-    close all;
+    if exist('fs','var')
+        close(fs);
+    end
     fs = figure;
     fs.WindowState = 'maximized';
     semilogx(grids(1:length(sval)),sval,'--o');
