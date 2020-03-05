@@ -29,7 +29,6 @@ if ~isempty(ROM)
     xlim([0 1]);
     ylim([0 1]);
     colorbar;
-    colormap jet;
     title('ROM');
     xlabel('t');
     ylabel('x');
@@ -40,7 +39,6 @@ if ~isempty(ROM)
     xlim([0 1]);
     ylim([0 1]);
     colorbar;
-    colormap jet;
     title('$\Delta ROM$','interpreter','latex');
     xlabel('t');
     ylabel('x');
