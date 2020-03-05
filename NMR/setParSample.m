@@ -13,6 +13,10 @@ out(1,1) = -1;
 out(2,2) = -1;
 vals = [vals;out];
 
+% combined with zero
+out = eye(2,2);
+vals = [vals;out;-out];
+
 % scale
 vals = vals * pMax;
 
