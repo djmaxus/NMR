@@ -15,7 +15,7 @@ setParSample;
 %% grid
 Nt = 100;
 Ng = 1;
-grids = round(logspace(log10(5000),log10(5000),Ng));
+grids = round(logspace(log10(500),log10(500),Ng));
 sval = zeros(Ng,1);
 fs = figure;
 for iG = 1:Ng  
@@ -56,4 +56,4 @@ for iG = 1:Ng
     title('Speed-up plot');
     drawnow;
 end
-save('./log/last');
+% save('./log/last');
