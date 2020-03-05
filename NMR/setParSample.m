@@ -17,6 +17,6 @@ vals = [vals;out];
 vals = vals * pMax;
 
 %% inner samples
-out = lhsdesign(2,2);
+out = lhsdesign(4,2,'criterion','correlation');
 out = 2 * pMax * out - pMax;
 vals = [vals;out];
