@@ -34,12 +34,17 @@ if ~isempty(ROM)
     ylabel('x');
     axis square;
     
+    enum = abs(ROM.X - FOM.X);
+    denom = 3*sqrt(var(FOM.X,[],'all'));
+    denom = denom + eq(denom,0);
+    res = enum./denom;
+    
     subplot(2,3,3);
-    imagesc('CData',ROM.X - FOM.X,'XData',FOM.t,'YData',(1:Nx)./Nx);
+    imagesc('CData',100*res,'XData',FOM.t,'YData',(1:Nx)./Nx);
     xlim([0 1]);
     ylim([0 1]);
     colorbar;
-    title('$\Delta ROM$','interpreter','latex');
+    title('$|\Delta ROM|$, \%','interpreter','latex');
     xlabel('t');
     ylabel('x');
     axis square;
@@ -57,10 +62,7 @@ title('Diffusion coefficient $D_0(x)$','interpreter','latex');
 if ~isempty(ROM.X)
     
     subplot(2,3,5:6);
-    enum = abs(ROM.X - FOM.X);
-    denom = 3*sqrt(var(FOM.X,[],'all'));
-    denom = denom + eq(denom,0);
-    res = enum./denom;
+    
     res = sum(res.^2,1)./size(enum,1);
     plot((1:Nt+1)./Nt,100*sqrt(res));
     xlim([0,1]);
