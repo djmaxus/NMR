@@ -35,7 +35,7 @@ if ~isempty(ROM)
     axis square;
     
     enum = abs(ROM.X - FOM.X);
-    denom = 3*sqrt(var(FOM.X,[],'all'));
+    denom = 3*sqrt(var(FOM.X,[],1));
     denom = denom + eq(denom,0);
     res = enum./denom;
     
