@@ -1,11 +1,11 @@
-nR = 0.1;
-nR = round(nR * Nx);
-nR = max(nR,POD.Rx.N);
-POD.Rx = makeOblique(nR/Nx,POD.Rx);
-disp(norm(POD.Rx.O * data_r - data_r));
+nR = 0.5;
+nR = round(POD.Rx.N * (1 + nR));
+nR = nR/size(POD.Rx.U,1);
+POD.Rx = makeOblique(nR,POD.Rx);
+disp(norm(applyOblique(data_r,POD.Rx) - data_r));
 
-nJ = 0.1;
-nJ = round(nJ * size(data_j,1));
-nJ = max(nJ,POD.Jnz.N);
-POD.Jnz = makeOblique(nJ/Nx/3,POD.Jnz);
-disp(norm(POD.Jnz.O * data_j - data_j));
+nJ = 0.5;
+nJ = round(POD.Jnz.N * (1 + nJ));
+nJ = nJ/size(POD.Jnz.U,1);
+POD.Jnz = makeOblique(nJ,POD.Jnz);
+disp(norm(applyOblique(data_j,POD.Jnz) - data_j));
