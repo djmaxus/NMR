@@ -1,9 +1,6 @@
 function [POD] = makePOD(data, init, mu, param)
     %MAKEPOD Summary of this function goes here
     %   Detailed explanation goes here
-    
-    
-    
     %% Substract initial
     if init
         POD.init = data(:,1);
