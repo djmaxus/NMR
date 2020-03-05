@@ -15,11 +15,12 @@ val = rand(1,2) * 2 * pMax - pMax;
 
 %% grid
 Nt = 100;
-Ng = 1;
-grids = round(logspace(log10(500),log10(500),Ng));
-sval = [];
+Ng = 3;
+grids = round(logspace(log10(100),log10(500),Ng));
+sval = zeros(Ng,1);
 fs = figure;
-for Nx = grids  
+for iG = 1:Ng  
+    Nx =  grids(iG);
     %% problem
     setProblem;
     
@@ -33,13 +34,13 @@ for Nx = grids
     plotNMR;
     
     %% speed-up plot
-    sval = [sval,speed_up];
+    sval(iG) = speed_up;
     if exist('fs','var')
         close(fs);
     end
     fs = figure;
     fs.WindowState = 'maximized';
-    semilogx(grids(1:length(sval)),sval,'--o');
+    semilogx(grids,sval,'--o');
     xlabel('Grid size');
     ylabel('Speed-up');
     title('Speed-up plot');
