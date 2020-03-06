@@ -48,6 +48,7 @@ for iG = 1:Ng
     if exist('fs','var')
         close(fs);
     end
+    %%
     fs = figure;
     fs.WindowState = 'maximized';
     semilogx(grids(1:iG),sval(1:iG),'--o');
