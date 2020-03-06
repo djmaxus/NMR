@@ -190,7 +190,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
         end
         if dt + 1e-10 < dt_min
-            error(['not converged, residual = ',num2str(delta)]);
+            disp(['not converged, residual = ',num2str(delta)]);
         end
     end
     sol.t = [sol.t,t];
