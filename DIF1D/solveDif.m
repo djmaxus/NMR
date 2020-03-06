@@ -105,7 +105,9 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                     Xp(:,j) = POD.X.data{j}.X(:,t_ind+1);
                 end
                 Yp = backward(Xp,POD.X);
-                Y(:,2) = interpTriang(val,vals,Yp(:,nV)')';
+                Yi = interpTriang(val,vals,Yp(:,nV)')';
+                alpha = 0.5;
+                Y(:,2) = alpha * Yi + (1 - alpha)*Y(:,1);
             end
         end
 %         if r_pod
