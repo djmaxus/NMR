@@ -9,4 +9,4 @@ D = aD * sin(pD*2*pi*(1:Nx+1)'./(Nx+1)) + 1;
 D = D * 1.0e-2;
 
 % boundary condition type
-bc.first = false;
+bc.first = true;
