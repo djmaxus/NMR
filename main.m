@@ -30,7 +30,9 @@ for iG = 1:Ng
     val = rand(1,2) * 2 * pMax - pMax;
     [nV,xV] = findSimplex(val,vals);
     bc.val = val;
+    %% FOM
     [FOM] = solveDif(Nx,Nt,bc,D);
+    %% ROM
     try
         [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
         disp(['iters per step: ',num2str(ROM.k_avg)]);
