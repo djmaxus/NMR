@@ -9,7 +9,8 @@ Tmin = min([FOM.t,ROM.t],[],'all');
 Tmax = max([FOM.t,ROM.t],[],'all');
 
 f = figure;
-f.WindowState = 'maximized';
+% f.WindowState = 'maximized';
+f.WindowStyle = 'docked';
 
 subplot(2,3,1);
 imagesc('CData',FOM.X,'XData',FOM.t,'YData',(1:Nx)./Nx);
