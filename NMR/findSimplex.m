@@ -7,11 +7,11 @@ function [nV,xV] = findSimplex(Xq,X)
     for j = 1:size(grid,1)
         nV = grid(j,:);
         xV = X(nV,:);
-        in = inSimplex(Xq,xV); 
+        in = inSimplex(Xq,xV);
         if in
             break;
         end
-     end
+    end
 end
 
 function out = inSimplex(Xq,Xp)
@@ -27,19 +27,46 @@ function out = inSimplex(Xq,Xp)
         dp = (xp - xm);
         out_m = out_m .* (dp * dq' > 0);
         %% orthogonal projection
-%         A = [Xs;xm];
-%         A = [A,-ones(size(A,1),1)];
-%         n = A \ zeros(size(A,1),1);
-%         Dq = hpdist((Xq-xm)',n);
-%         Dp = hpdist((xp-xm)',n);
-%         out = out .* (Dp' * Dq >= 0);
+        n = hpn(Xs');
+        if sum(isinf(n),'all') + sum(isnan(n),'all') > 0
+            warning('singular');
+        elseif norm(n) <= 0
+            warning('zero length');
+        else
+            x0 = Xs(1,:);
+            Dq = hpdist(Xq',n,x0');
+            Dp = hpdist(xp',n,x0');
+            out = out .* (Dp * Dq >= 0);
+        end
     end
-%     if out ~= out_m
-%         warning('Simplex enclosure mismatch');
-%     end
-    out = out_m;
+    if out ~= out_m
+        warning('Simplex enclosure definition mismatch');
+    end
+%     out = out_m;
 end
 
-function out = hpdist(x,n)
-    out = diag(n) * x ./ norm(n);
+function out = hpdist(x,n,x0)
+    out = n' * (x-x0) ./ norm(n);
+end
+
+function [n] = hpn(X)
+    x0 = X(:,1);
+    A = (X - x0)';
+    A(1,:) = 2;
+%     n = zeros(size(x0));
+%     n(1) = A(2,2);
+%     n(2) = -A(2,1);
+    n = rand(size(x0));
+    for k = 1:100
+        n = n ./ norm(n);
+        R = A*n;
+        R(1) = norm(n) - 1;
+        delta = norm(R);
+        if delta < 1e-8
+            break;
+        end
+        J = A;
+        J(1,:) = A(1,:) .* n';
+        n = n + J'*J \ (-J'*R);  
+    end
 end
