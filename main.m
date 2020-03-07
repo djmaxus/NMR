@@ -15,7 +15,7 @@ setParSample;
 %% grid
 Nt = 100;
 Ng = 1;
-grids = round(logspace(log10(500),log10(500),Ng));
+grids = round(logspace(log10(1000),log10(1000),Ng));
 sval = zeros(Ng,1);
 fs = figure;
 for iG = 1:Ng  
@@ -32,13 +32,13 @@ for iG = 1:Ng
     bc.val = val;
     %% FOM
     [FOM] = solveDif(Nx,Nt,bc,D);
-    %% ROM
+    %% ROM with default initial approximation
     try
         [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
         disp(['iters per step: ',num2str(ROM.k_avg)]);
         plotNMR;
     end
-    
+    %% ROM with data-driven initial approximation
     try
         [ROM] = solveDif(Nx,Nt,bc,D,3,POD,xV,nV,val);
         disp(['iters per step: ',num2str(ROM.k_avg)]);
