@@ -58,27 +58,10 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     % space discretization
     D = D*Nx^2;
     
-    %     if v_pod
-    %         f = figure;
-    %         f.WindowState = 'maximized';
-    %         subplot(2,1,1);
-    %         plot(X(:,2));
-    %         title('Initial field');
-    %         xlabel('x');
-    %         ylabel('U0');
-    %         subplot(2,1,2);
-    %         plot(D);
-    %         title('Diffusion coefficient');
-    %         xlabel('x');
-    %         ylabel('D');
-    %         xlim([1,Nx+1]);
-    %         ylim([0, max(D)*1.1]);
-    %     end
-    
     %% convergence parameters
     kmax = 8;
     kmin = 3;
-    crit_conv = 1e-4;
+    crit_conv = 1e-8;
     %% dataset initialization
     sol.t = [];
     sol.X = [];
@@ -86,6 +69,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
         sol.Rx = [];
         sol.Jnz = [];
     end
+    %% solution process
     wb = waitbar(t,'Forward problem');
     timer = 0;
     R0 = 1;
@@ -106,7 +90,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 end
                 Yp = backward(Xp,POD.X);
                 Yi = interpTriang(val,vals,Yp(:,nV)')';
-                alpha = 0.5;
+                alpha = rand;
                 Y(:,2) = alpha * Yi + (1 - alpha)*Y(:,1);
             end
         end
