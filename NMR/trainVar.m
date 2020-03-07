@@ -4,9 +4,9 @@ parfor i = 1:Ns
     bc_i = bc;
     bc_i.val = vals(i,:);
     [data{i}] = solveDif(Nx,Nt,bc_i,D,1);   
-    fprintf([num2str(i),' ']);
+    disp([num2str(i),' ']);
 end
-fprintf('\n');
+% fprintf('\n');
 data_x = [];
 for i = 1:Ns
     data_x = [data_x,data{i}.X];
