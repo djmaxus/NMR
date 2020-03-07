@@ -10,12 +10,10 @@ addpath('./NMR');
 pMax = 1;
 setParSample;
 
-% boundary condition test value
-
 %% grid
 Nt = 100;
 Ng = 1;
-grids = round(logspace(log10(1000),log10(1000),Ng));
+grids = round(logspace(log10(500),log10(500),Ng));
 sval = zeros(Ng,1);
 fs = figure;
 for iG = 1:Ng  
@@ -27,6 +25,7 @@ for iG = 1:Ng
     reduceAll;
     
     %% online stage
+    % boundary condition test value
     val = rand(1,2) * 2 * pMax - pMax;
     [nV,xV] = findSimplex(val,vals);
     bc.val = val;
@@ -52,7 +51,7 @@ for iG = 1:Ng
     end
     %%
     fs = figure;
-    fs.WindowState = 'maximized';
+    fs.WindowStyle = 'docked';
     semilogx(grids(1:iG),sval(1:iG),'--o');
     xlabel('Grid size');
     ylabel('Speed-up');
