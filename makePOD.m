@@ -35,7 +35,7 @@ function [POD] = makePOD(data, init, mu, param)
     end
     %% visualize
     f = figure;
-    f.WindowState = 'maximized';
+    f.WindowStyle = 'docked';
     % dataset
     plot(POD.init,'b-','LineWidth',0.01);
     hold on;
