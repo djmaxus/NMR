@@ -61,7 +61,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     %% convergence parameters
     kmax = 8;
     kmin = 3;
-    crit_conv = 1e-8;
+    crit_conv = 1e-5;
     %% dataset initialization
     sol.t = [];
     sol.X = [];
