@@ -63,8 +63,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     kmin = 3;
     crit_conv = 1e-3;
     %% dataset initialization
-    sol.t = [];
-    sol.X = [];
+    sol.t = zeros(1,Nt+1);
+    sol.X = zeros(Nx,Nt+1);
     if lstage == 2
         sol.Rx = [];
         sol.Jnz = [];
@@ -74,6 +74,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     timer = 0;
     R0 = 1;
     k_all = [];
+    nstep = 1;
     while t < 1
         dt = min(dt, 1-t);
         
@@ -100,8 +101,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
 %                 PODj = [];
 %             end
 %         end
-        sol.t = [sol.t,t];
-        sol.X = [sol.X,X(:,1)];
+        sol.t(nstep) = t;
+        sol.X(:,nstep) = X(:,1);
         
         for k = 1:kmax
             %% residual
@@ -110,17 +111,17 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
             t_mat_build = tic;
             [Rt,W] = buildResidual(X,dt,D,bc,PODr);
-            Rx = W(2:N+1)-W(1:N);
+            Rx = W(2:Nx+1)-W(1:Nx);
             R = Rt + Rx;
             %% Jacobian
-            [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,PODj);
+            [Jt,Jx,Jf] = buildJacobian(X,dt,D,bc,PODj);
             J = Jx + Jt;
             t_mat_build = toc(t_mat_build);
             timer = timer + t_mat_build;
             % collect residual snapshots
             if lstage == 2
                 sol.Rx = [sol.Rx,W];
-                sol.Jnz = [sol.Jnz,Jnz];
+                sol.Jnz = [sol.Jnz,Jf];
             end
             % LSPG
             if v_pod
@@ -139,6 +140,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             is_converged = delta <= crit_conv*max(R0,1);
             %             is_converged = or(is_converged,delta <= crit_conv);
             if is_converged
+                nstep = nstep + 1;
                 k_all = [k_all,k];
                 t = t+dt;
                 if v_pod
@@ -181,8 +183,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             break;
         end
     end
-    sol.t = [sol.t,t];
-    sol.X = [sol.X,X(:,1)];
+    sol.t(nstep) = t;
+    sol.X(:,nstep) = X(:,1);
     if lstage >= 2
         sol.k_avg = mean(k_all);
     end

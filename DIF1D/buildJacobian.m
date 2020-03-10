@@ -16,45 +16,19 @@ function [Jt,Jx,Jf] = buildJacobian(X,dt,D,bc,POD)
         % gappy;
         Jf = applyOblique(Jf,POD);  
     end
-    Jnz = zeros(3*N-2,1);
-    
-    for k = 1:3*N-2
-        if k <= N
-            i = k;
-            j = k;
-        elseif k <= 2*N-1
-            i = k - N;
-            j = i+1;
-        else
-            j = k - 2*N+1;
-            i = j+1;
-        end
-        if i == j
-            J1 = Jf(i,2);
-            J2 = Jf(i+1,1);
-            Jnz(k) = J2 - J1;
-        elseif i < j
-            J2 = Jf(i+1,2);
-            Jnz(k) = J2;
-        else
-            J1 = Jf(i,1);
-            Jnz(k) = -J1;
-        end
-    end
-    
-    
-    Jc = Jnz(1:N);
-    Ju = Jnz(N+1:2*N-1);
-    Jd = Jnz(2*N:3*N-2);
     
     Jx = spalloc(N,N,3*N-2);
     for i=1:N
         if i ~=1
-            Jx(i,i-1) = Jd(i-1);
+            J1 = Jf(i,1);
+            Jx(i,i-1) = -J1;
         end
-        Jx(i,i) = Jc(i);
+        J1 = Jf(i,2);
+        J2 = Jf(i+1,1);
+        Jx(i,i) = J2 - J1;
         if i ~= N
-            Jx(i,i+1) = Ju(i);
+            J2 = Jf(i+1,2);
+            Jx(i,i+1) = J2;
         end
     end
     Jf = Jf * [ 1,  0;
