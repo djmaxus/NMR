@@ -34,25 +34,25 @@ function [POD] = makePOD(data, init, mu, param)
         error('incorrect parameter');
     end
     %% visualize
-    f = figure;
-    f.WindowStyle = 'docked';
-    % dataset
-    plot(POD.init,'b-','LineWidth',0.01);
-    hold on;
-    for i = 1:size(data,2)
-        plot(POD.init + POD.mu + data(:,i),'k-','LineWidth',0.01);
-        hold on;
-    end
-    % principal components
-    U = POD.U*sqrt(S);
-    for i = 1:POD.N
-        plot(POD.init + POD.mu + U(:,i),'r-','LineWidth',1.0);
-        hold on;
-    end
-    hold off;
-    % reconstruction error
-    X = POD.U * POD.U' * data;
-    err = norm(data - X);
-    title(['Reconstruction error: ',num2str(err)]);
-    drawnow;
+%     f = figure;
+%     f.WindowStyle = 'docked';
+%     % dataset
+%     plot(POD.init,'b-','LineWidth',0.01);
+%     hold on;
+%     for i = 1:size(data,2)
+%         plot(POD.init + POD.mu + data(:,i),'k-','LineWidth',0.01);
+%         hold on;
+%     end
+%     % principal components
+%     U = POD.U*sqrt(S);
+%     for i = 1:POD.N
+%         plot(POD.init + POD.mu + U(:,i),'r-','LineWidth',1.0);
+%         hold on;
+%     end
+%     hold off;
+%     % reconstruction error
+%     X = POD.U * POD.U' * data;
+%     err = norm(data - X);
+%     title(['Reconstruction error: ',num2str(err)]);
+%     drawnow;
 end
