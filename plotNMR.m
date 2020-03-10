@@ -14,10 +14,10 @@ f.WindowStyle = 'docked';
 
 subplot(2,3,1);
 imagesc('CData',FOM.X,'XData',FOM.t,'YData',(1:Nx)./Nx);
-caxis([Xmin Xmax]);
 xlim([0 1]);
 ylim([0 1]);
 colorbar;
+caxis([Xmin Xmax]);
 colormap jet;
 title('FOM');
 xlabel('t');
@@ -26,10 +26,10 @@ axis square;
 if ~isempty(ROM)
     subplot(2,3,2);
     imagesc('CData',ROM.X,'XData',ROM.t,'YData',(1:Nx)./Nx);
-    caxis([Xmin Xmax]);
     xlim([0 1]);
     ylim([0 1]);
     colorbar;
+    caxis([Xmin Xmax]);
     title('ROM');
     xlabel('t');
     ylabel('x');
