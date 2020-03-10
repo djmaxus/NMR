@@ -12,10 +12,11 @@ setParSample;
 
 %% grid
 Nt = 100;
-Ng = 1;
-grids = round(logspace(log10(500),log10(500),Ng));
+Ng = 10;
+grids = round(logspace(log10(100),log10(10000),Ng));
 sval = zeros(Ng,1);
 fs = figure;
+fs.WindowStyle = 'docked';
 for iG = 1:Ng  
     Nx =  grids(iG);
     %% problem
@@ -27,16 +28,19 @@ for iG = 1:Ng
     %% online stage
     % boundary condition test value
     val = rand(1,2) * 2 * pMax - pMax;
-    [nV,xV] = findSimplex(val,vals);
+    [nV,xV,in] = findSimplex(val,vals);
     bc.val = val;
+    
     %% FOM
     [FOM] = solveDif(Nx,Nt,bc,D);
+    
     %% ROM with default initial approximation
     try
         [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
         disp(['iters per step: ',num2str(ROM.k_avg)]);
         plotNMR;
     end
+    
     %% ROM with data-driven initial approximation
     try
         [ROM] = solveDif(Nx,Nt,bc,D,3,POD,xV,nV,val);
@@ -49,6 +53,7 @@ for iG = 1:Ng
     if exist('fs','var')
         close(fs);
     end
+    
     %%
     fs = figure;
     fs.WindowStyle = 'docked';
@@ -57,5 +62,6 @@ for iG = 1:Ng
     ylabel('Speed-up');
     title('Speed-up plot');
     drawnow;
+    
 end
 % save('./log/last');
