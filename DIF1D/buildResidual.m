@@ -1,4 +1,4 @@
-function [Rt,Rx,W] = buildResidual(X,dt,D,bc,POD)
+function [Rt,W] = buildResidual(X,dt,D,bc,POD)
     N = size(X,1);
     nmr = ~isempty(POD);
     %% time derivative
@@ -16,9 +16,7 @@ function [Rt,Rx,W] = buildResidual(X,dt,D,bc,POD)
     end
     if nmr
         W = applyOblique(W,POD);
-    end
-    Rx = W(2:N+1)-W(1:N);
-    
+    end 
 end
 
 function [R] = calcFlux(X,D,bc,i)

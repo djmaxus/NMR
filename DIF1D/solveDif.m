@@ -109,7 +109,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 X(:,2) = forward(Y(:,2),POD.X);
             end
             t_mat_build = tic;
-            [Rt,Rx,W] = buildResidual(X,dt,D,bc,PODr);
+            [Rt,W] = buildResidual(X,dt,D,bc,PODr);
+            Rx = W(2:N+1)-W(1:N);
             R = Rt + Rx;
             %% Jacobian
             [Jt,Jx,Jnz] = buildJacobian(X,dt,D,bc,PODj);
