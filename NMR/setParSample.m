@@ -26,7 +26,7 @@ vals = vals * pMax;
 
 %% inner samples
 out = lhsdesign(max(N,4),2,'criterion','correlation');
-    out = 2 * pMax * out - pMax;
+out = 2 * pMax * out - pMax;
 vals = [vals;out];
 
 %% plot
