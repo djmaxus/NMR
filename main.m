@@ -13,7 +13,7 @@ setParSample;
 %% grid
 Nt = 100;
 Ng = 1;
-grids = round(logspace(log10(2000),log10(2000),Ng));
+grids = round(logspace(log10(500),log10(500),Ng));
 sval = zeros(Ng,1);
 fs = figure;
 fs.WindowStyle = 'docked';
