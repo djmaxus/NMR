@@ -1,6 +1,6 @@
 %% Diffusion
 % amplitude
-aD = 0.5;
+aD = 0.9;
 % period number
 pD = 1;
 % distribution
