@@ -26,7 +26,7 @@ function [out] = genRom2(param,train_1,varargin)
             continue;
         else
             data.Nx = param.grids(iNx);
-            [POD.X] = truncRom1(train_1{iNx},{});
+            [POD.X] = truncRom1(train_1{iNx});
             D = setDiff(data.Nx,param.D);
             disp(['Nx: ',num2str(data.Nx)]);
             parfor i = 1:Ns

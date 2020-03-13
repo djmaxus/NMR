@@ -26,6 +26,6 @@ function [fig] = plotParSample(vals,val,varargin)
     ylabel('$b_1$','interpreter','latex');
     
     legend('Train samples','Test sample');
-    title('Points in parameter samples');
+    title('Parameter samples');
 end
 

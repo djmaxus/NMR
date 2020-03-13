@@ -1,20 +1,18 @@
 function [POD] = truncRom2(POD,train,varargin)
     %TRAINROM1 Summary of this function goes here
     %   Detailed explanation goes here
-    if length(varargin) >= 1
-        fig = varargin{1};
-    else
-        varargin = {};
-    end
-    fig.Name = 'ROM-2 Train';
     R = [];
     J = [];
     for i = 1:length(train.sol)
         R = [R,train.sol{i}.Rx];
         J = [J,train.sol{i}.Jnz];
     end
-    POD.Rx = makePOD(R,false,false,0.99);
-    POD.Jnz = makePOD(J,false,false,0.99);
+    fTrainR = figure;
+    fTrainR.WindowStyle = 'docked';
+    POD.Rx = makePOD(R,false,false,0.99,fTrainR);
+    fTrainJ = figure;
+    fTrainJ.WindowStyle = 'docked';
+    POD.Jnz = makePOD(J,false,false,0.99,fTrainJ);
     
     POD.Rx.N = max(POD.Rx.N,POD.X.N);
     POD.Jnz.N = max(POD.Jnz.N,POD.X.N);

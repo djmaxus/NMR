@@ -1,16 +1,21 @@
 function [POD] = truncRom1(train,varargin)
     %TRAINROM1 Summary of this function goes here
     %   Detailed explanation goes here
-    if length(varargin) >= 1
-%         fig = varargin{1};
+    if length(varargin) >=1
+        to_plot = varargin{1};
     else
-        varargin = {};
+        to_plot = false;
     end
-    fig.Name = 'ROM-1 Train';
     X = [];
     for i = 1:length(train.sol)
         X = [X,train.sol{i}.X];
     end
-    POD = makePOD(X,true,false,0.99);
+    if to_plot
+        fTrain1 = figure;
+        fTrain1.WindowStyle = 'docked';
+        POD = makePOD(X,true,false,0.99,fTrain1);
+    else
+        POD = makePOD(X,true,false,0.99);
+    end
 end
 

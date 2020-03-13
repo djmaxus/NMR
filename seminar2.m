@@ -7,16 +7,24 @@ addpath('./POD');
 addpath('./NMR');
 %% set samples
 % max parameter absolute value
-pMax = 1;
-vals = setParSample(pMax);
+fid = fopen('./data/vals.mat');
+if fid ~= -1
+    load('./data/vals','vals','pMax');
+    fclose(fid);
+else
+    pMax = 1;
+    vals = setParSample(pMax);
+end
+save('./data/vals','vals','pMax');
+
 fPar = figure;
 fPar.WindowStyle = 'docked';
 [~] = plotParSample(vals,[],fPar);
 drawnow;
 %% set other parmeters for dataset
-NxMin = 100;
-NxMax = 1000;
-NxCount = 10;
+NxMin = 1000;
+NxMax = 2000;
+NxCount = 2;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 param.Nt = 100;
 param.D.A = 0.9;
@@ -29,10 +37,11 @@ fid_1 = fopen('./data/train_1.mat');
 if fid_1 ~= -1
     load('./data/train_1','train_1');
     [train_1] = genRom1(param,train_1);
+    fclose(fid_1);
 else
     [train_1] = genRom1(param);
 end
-fclose(fid_1);
+
 [train_1] = genRom1(param,train_1);
 save('./data/train_1','train_1');
 %% train or load ROM-II data
@@ -40,10 +49,11 @@ fid_2 = fopen('./data/train_2.mat');
 if fid_2 ~= -1
     load('./data/train_2','train_2');
     [train_2] = genRom2(param,train_1,train_2);
+    fclose(fid_2);
 else
     [train_2] = genRom2(param,train_1);
 end
-fclose(fid_2);
+
 [train_2] = genRom2(param,train_1,train_2);
 save('./data/train_2','train_2');
 %% numerical solution
@@ -89,9 +99,7 @@ fPar.WindowStyle = 'docked';
 [fPar] = plotParSample(vals,bc.val,fPar);
 drawnow;
 %% ROM-I train
-fTrain1 = figure;
-fTrain1.WindowStyle = 'docked';
-[POD.X] = truncRom1(train_1{iNx},fTrain1);
+[POD.X] = truncRom1(train_1{iNx},true);
 %% ROM-I test
 [ROM_1] = solveDif(Nx,param.Nt,bc,D,2,POD);
 %% ROM-I plot
@@ -105,9 +113,11 @@ drawnow;
 %% Gappy-POD demo
 
 %% ROM-II train
-fTrain2 = figure;
-fTrain2.WindowStyle = 'docked';
-[POD] = truncRom2(POD,train_2{iNx},fTrain2);
+[POD] = truncRom2(POD,train_2{iNx});
+
+%% ROM-II gappy visualization
+
+
 %% ROM-II test
 [ROM_2] = solveDif(Nx,param.Nt,bc,D,3,POD);
 %% ROM-II plot
@@ -140,11 +150,8 @@ time_dd = toc(time_dd);
 ROMdd = ROM_2;
 ROMdd.X = Xdd;
 ROMdd.timelog.overall = time_dd;
-fRomDD = figure;
-fRomDD.WindowStyle = 'docked';
-fRomDD.Name = 'Data-driven approximation';
-[fRomDD] = plotSol(ROMdd,fRomDD,true);
-drawnow;
+ROMdd.name = 'ROM_{DD}';
+
 %% ROM-III test
 [ROM_3] = solveDif(Nx,param.Nt,bc,D,3,POD,Ydd);
 %% ROM-II plot
@@ -152,10 +159,11 @@ fRom3 = figure;
 fRom3.WindowStyle = 'docked';
 [fRom3] = plotComp(FOM,ROM_3,D,fRom3);
 drawnow;
-%% ROM-II VS data-driven
-fRom4 = figure;
-fRom4.WindowStyle = 'docked';
-[fRom4] = plotComp(ROM_3,ROMdd,D,fRom4);
+
+%% DD plot
+fRomDD = figure;
+fRomDD.WindowStyle = 'docked';
+[fRomDD] = plotComp(FOM,ROMdd,D,fRomDD);
 drawnow;
 
 %% speed-up ROM-III

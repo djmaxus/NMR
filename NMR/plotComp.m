@@ -65,7 +65,7 @@ function [fig] = plotComp(sol_1,sol_2,D,varargin)
     spd.all = FOM.timelog.overall / ROM.timelog.overall;
     spd.lin =  FOM.timelog.linsol / ROM.timelog.linsol;
     spd.bld =  FOM.timelog.bld / ROM.timelog.bld;
-    spd.iter =  ROM.timelog.iters.lin_avg;
+    spd.iter =  ROM.timelog.iters.bld_avg;
     sms = ['Speed up: (',num2str(spd.all),', ',num2str(spd.lin),', ',num2str(spd.bld),', ',num2str(spd.iter),')'];
     disp(sms);
     fig.Name = sms;

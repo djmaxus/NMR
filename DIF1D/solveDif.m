@@ -226,5 +226,6 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     sol.timelog.lin_avg = sol.timelog.lin/sol.timelog.iters.lin;
     sol.timelog.bld_avg = sol.timelog.bld/sol.timelog.iters.bld;
     sol.timelog.iters.lin_avg = sol.timelog.iters.lin / Nt;
+    sol.timelog.iters.bld_avg = sol.timelog.iters.bld / Nt;
     delete(wb);
 end
