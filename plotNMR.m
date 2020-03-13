@@ -73,7 +73,7 @@ if ~isempty(ROM.X)
 end
 legend('Relative MSE');
 
-speed_up = FOM.timer / ROM.timer;
+speed_up = FOM.timelog.overall / ROM.timelog.overall;
 sms = ['Speed up: ',num2str(speed_up)];
 disp(sms);
 f.Name = sms;

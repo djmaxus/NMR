@@ -1,21 +1,46 @@
 function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
+    %% timelog
+    sol.timelog.linsol = 0;
+    sol.timelog.proj = 0;
+    sol.timelog.pod = 0;
+    sol.timelog.resbld = 0;
+    sol.timelog.jacbld = 0;
+    sol.timelog.kn = zeros(1,Nt);
     %% argument unpacking
     if length(varargin) >= 1
         lstage = varargin{1};
     else
         lstage = 0;
     end
+    %% stage name
+    switch lstage
+        case 0
+            sol.name = 'FOM';
+        case 2
+            sol.name = 'ROM_I';
+        case 3
+            sol.name = 'ROM_{II}';
+            if length(varargin) >= 3
+                sol.name = 'ROM_{III}';
+            else
+                sol.name = 'ROM_{II}';
+            end
+        otherwise
+            sol.name = 'ROM';
+    end
+    %% Parameter save
+    sol.D = D;
+    sol.bc = bc;
+    %%
     if length(varargin) >= 2
         POD = varargin{2};
     else
         POD = [];
     end
-    if length(varargin) >= 5
-        vals = varargin{3};
-        nV = varargin{4};
-        val = varargin{5};
+    if length(varargin) >= 3
+        Ydd = varargin{3};
     end
     %% stage requirements check
     v_pod = lstage > 1;
@@ -66,14 +91,13 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     sol.t = zeros(1,Nt+1);
     sol.X = zeros(Nx,Nt+1);
     if lstage == 2
+        sol.Y = [];
         sol.Rx = [];
         sol.Jnz = [];
     end
     %% solution process
     wb = waitbar(t,'Forward problem');
-    timer = 0;
     R0 = 1;
-    k_all = [];
     nstep = 1;
     while t < 1
         dt = min(dt, 1-t);
@@ -83,41 +107,45 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
         else
             X(:,1) = forward(Y(:,1),POD.X);
             Y(:,2) = Y(:,1);
-            if length(varargin) >= 5
-                t_ind = find(POD.X.data{1}.t == t);
-                Xp = zeros(Nx,length(POD.X.data));
-                for j = 1:length(POD.X.data)
-                    Xp(:,j) = POD.X.data{j}.X(:,t_ind+1);
-                end
-                Yp = backward(Xp,POD.X);
-                Yi = interpTriang(val,vals,Yp(:,nV)')';
+            if length(varargin) >= 3
+                Yi = Ydd(:,nstep+1);
                 alpha = rand;
                 Y(:,2) = alpha * Yi + (1 - alpha)*Y(:,1);
             end
         end
-%         if r_pod
-%             if t==0
-%                 PODr = [];
-%                 PODj = [];
-%             end
-%         end
+        %         if r_pod
+        %             if t==0
+        %                 PODr = [];
+        %                 PODj = [];
+        %             end
+        %         end
         sol.t(nstep) = t;
         sol.X(:,nstep) = X(:,1);
+        if lstage == 2
+            sol.Y(:,nstep) = Y(:,1);
+        end
         
         for k = 1:kmax
             %% residual
             if v_pod
+                t_pod = tic;
                 X(:,2) = forward(Y(:,2),POD.X);
+                t_pod = toc(t_pod);
+                sol.timelog.pod = sol.timelog.pod + t_pod;
             end
-            t_mat_build = tic;
+            t_res_build = tic;
             [Rt,W] = buildResidual(X,dt,D,bc,PODr);
+            t_res_build = toc(t_res_build);
+            sol.timelog.resbld = sol.timelog.resbld + t_res_build;
             Rx = W(2:Nx+1)-W(1:Nx);
             R = Rt + Rx;
             %% Jacobian
-            [Jt,Jx,Jf] = buildJacobian(X,dt,D,bc,PODj);
+            t_jac_build = tic;
+            [Jt,Jf] = buildFlow(X,dt,D,bc,PODj);
+            t_jac_build = toc(t_jac_build);
+            sol.timelog.jacbld = sol.timelog.jacbld + t_jac_build;
+            [Jx] = buildJacobian(Jf,Nx);
             J = Jx + Jt;
-            t_mat_build = toc(t_mat_build);
-            timer = timer + t_mat_build;
             % collect residual snapshots
             if lstage == 2
                 sol.Rx = [sol.Rx,W];
@@ -128,7 +156,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 t_projection = tic;
                 J = J * GP;
                 t_projection = toc(t_projection);
-                timer = timer + t_projection;
+                sol.timelog.proj = sol.timelog.proj + t_projection;
             end
             R = J' * R;
             
@@ -140,8 +168,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             is_converged = delta <= crit_conv*max(R0,1);
             %             is_converged = or(is_converged,delta <= crit_conv);
             if is_converged
+                sol.timelog.kn(nstep) = k;
                 nstep = nstep + 1;
-                k_all = [k_all,k];
                 t = t+dt;
                 if v_pod
                     Y(:,1) = Y(:,2);
@@ -162,10 +190,10 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             
             %% linsolve
             t_lin_solve = tic;
-            [Qj,Rj] = qr(J'*J);
-            dX = Rj \ (-Qj'* R);
+            dX = (J'*J) \ (-R);
             t_lin_solve = toc(t_lin_solve);
-            timer = timer + t_lin_solve;
+            sol.timelog.linsol = sol.timelog.linsol + t_lin_solve;
+            
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
             if is_weak > 0
                 dX(:) = 0;
@@ -185,9 +213,18 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     end
     sol.t(nstep) = t;
     sol.X(:,nstep) = X(:,1);
-    if lstage >= 2
-        sol.k_avg = mean(k_all);
+    if lstage == 2
+        sol.Y(:,nstep) = Y(:,1);
     end
-    sol.timer = timer;
+    
+    sol.timelog.bld = sol.timelog.resbld + sol.timelog.jacbld + sol.timelog.pod;
+    sol.timelog.lin = sol.timelog.linsol + sol.timelog.proj;
+    sol.timelog.overall = sol.timelog.lin + ...
+        sol.timelog.bld;
+    sol.timelog.iters.bld = sum(sol.timelog.kn,'all');
+    sol.timelog.iters.lin = sum(sol.timelog.kn-1,'all');
+    sol.timelog.lin_avg = sol.timelog.lin/sol.timelog.iters.lin;
+    sol.timelog.bld_avg = sol.timelog.bld/sol.timelog.iters.bld;
+    sol.timelog.iters.lin_avg = sol.timelog.iters.lin / Nt;
     delete(wb);
 end

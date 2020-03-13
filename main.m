@@ -17,7 +17,7 @@ grids = round(logspace(log10(500),log10(500),Ng));
 sval = zeros(Ng,1);
 fs = figure;
 fs.WindowStyle = 'docked';
-for iG = 1:Ng  
+for iG = 1:Ng
     Nx =  grids(iG);
     %% problem
     setProblem;
@@ -35,18 +35,17 @@ for iG = 1:Ng
     [FOM] = solveDif(Nx,Nt,bc,D);
     
     %% ROM with default initial approximation
-    try
-        [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
-        disp(['iters per step: ',num2str(ROM.k_avg)]);
-        plotNMR;
-    end
+    
+    [ROM] = solveDif(Nx,Nt,bc,D,3,POD);
+    disp(['iters per step: ',num2str(ROM.timelog.iters.lin_avg)]);
+    plotNMR;
     
     %% ROM with data-driven initial approximation
-    try
-        [ROM] = solveDif(Nx,Nt,bc,D,3,POD,xV,nV,val);
-        disp(['iters per step: ',num2str(ROM.k_avg)]);
-        plotNMR;
-    end
+    
+    [ROM] = solveDif(Nx,Nt,bc,D,3,POD,xV,nV,val);
+    disp(['iters per step: ',num2str(ROM.timelog.iters.lin_avg)]);
+    plotNMR;
+    
     
     %% speed-up plot
     sval(iG) = speed_up;
