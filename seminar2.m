@@ -3,6 +3,8 @@ close all;
 clear all;
 clc;
 addpath('./DIF1D');
+addpath('./POD');
+addpath('./NMR');
 %% set samples
 % max parameter absolute value
 pMax = 1;
@@ -30,6 +32,7 @@ if fid_1 ~= -1
 else
     [train_1] = genRom1(param);
 end
+fclose(fid_1);
 [train_1] = genRom1(param,train_1);
 save('./data/train_1','train_1');
 %% train or load ROM-II data
@@ -40,6 +43,7 @@ if fid_2 ~= -1
 else
     [train_2] = genRom2(param,train_1);
 end
+fclose(fid_2);
 [train_2] = genRom2(param,train_1,train_2);
 save('./data/train_2','train_2');
 %% numerical solution
