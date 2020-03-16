@@ -207,7 +207,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
         end
         if dt + 1e-10 < dt_min
-            disp(['not converged, residual = ',num2str(delta)]);
+            disp(['not converged, relative residual = ',num2str(delta/max(R0,1))]);
             break;
         end
     end
