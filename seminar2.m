@@ -23,14 +23,14 @@ fPar.WindowStyle = 'docked';
 drawnow;
 
 %% set other parmeters for dataset
-NxMin = 4000;
-NxMax = 4000;
+NxMin = 2000;
+NxMax = 2000;
 NxCount = 1;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 param.Nt = 100;
 param.D.A = 0.9;
 param.D.P = 1;
-param.D.S = 5.0e-2;
+param.D.S = 1.0e-2;
 param.bc.first = true;
 param.vals = vals;
 
