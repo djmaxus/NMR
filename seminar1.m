@@ -57,7 +57,7 @@ POD.O.test = cell(size(data.test,2),1);
 wb = waitbar(0,'Calculating oblique projections');
 for i = 1:size(data.test,2)
     waitbar(i/size(data.test,2),wb);
-    POD.O.test{i} = oblique(mask.P.test{i},POD.Ut);
+    POD.O.test{i} = oblique(mask.P.test{i},POD.U(:,1:POD.N));
 end
 waitfor(wb);
 %% restore fields
@@ -75,9 +75,9 @@ compPlot(data.test,data.masked,data.restored,test_index);
 waitforbuttonpress;
 %% greedy masks
 uiwait(msgbox('Want a better mask?','','modal'));
-grd.num = size(POD.S,2);
+grd.num = POD.N;
 grd.frac = grd.num/size(data.test,1);
-grd.P.test = greedy(POD.U(:,1:grd.num));
+grd.P.test = greedy(POD.U(:,1:POD.N),grd.num);
 grd.test = sum(grd.P.test,2);
 data.masked_grd.test = data.test .* grd.test;
 data.masked_grd.label = 'gappy + greedy';
