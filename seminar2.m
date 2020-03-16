@@ -105,7 +105,7 @@ fRom1.WindowStyle = 'docked';
 drawnow;
 
 %% Gappy-POD demo
-
+seminar1;
 %% train or load ROM-II data
 fid_2 = fopen('./data/train_2.mat');
 if fid_2 ~= -1
