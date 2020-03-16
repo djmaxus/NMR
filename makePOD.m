@@ -53,12 +53,13 @@ function [POD,fig] = makePOD(data, init, mu, param,varargin)
         xmax = max(abs(data),[],'all');
         idx = [1,2,Nd];
         stl = {'r-','b-','g-'};
+        lwid = [2,2,1];
         for i = 1:length(idx)
-            waitforbuttonpress;
+%             waitforbuttonpress;
             u = POD.U(:,idx(i));
             umax = max(abs(u),[],'all');
             u = u .* xmax ./ umax ./ i;
-            plot(u,stl{i},'LineWidth',1);
+            plot(u,stl{i},'LineWidth',lwid(i));
             hold on;
         end
         hold off;
@@ -68,7 +69,7 @@ function [POD,fig] = makePOD(data, init, mu, param,varargin)
         title(['Reconstruction error: ',num2str(err)]);
         drawnow;
         % energy
-        waitforbuttonpress;
+%         waitforbuttonpress;
         subplot(1,2,2);
         enS = dS;
         for i = 1:Nd
