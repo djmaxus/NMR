@@ -35,13 +35,10 @@ function [fig] = pcaDemo(varargin)
     [Xstd] = U*S*[cos(theta);sin(theta)];
     
     %% principal components
-    waitforbuttonpress;
     plot([Xavg(1),Xavg(1) + L(1,1) ],[Xavg(2),Xavg(2) + L(2,1)],'-+r','LineWidth',1);
-    waitforbuttonpress;
     plot([Xavg(1),Xavg(1) + L(1,2) ],[Xavg(2),Xavg(2) + L(2,2)],'-+r','LineWidth',1);
     %% ellipsoids
     for j = 1:3
-        waitforbuttonpress;
         plot(Xavg(1) + j*Xstd(1,:),Xavg(2) + j*Xstd(2,:),'g-','LineWidth',1);
     end
 end
