@@ -31,7 +31,7 @@ function [out] = genRom1(param,varargin)
             parfor i = 1:Ns
                 bc_i = param.bc;
                 bc_i.val = param.vals(i,:);
-                sol{i} = solveDif(data.Nx,param.Nt,bc_i,D);
+                sol{i} = solveDif(data.Nx,param.Nt,bc_i,D,0,1);
                 disp(i);
             end
             data.sol = sol;
