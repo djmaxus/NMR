@@ -23,14 +23,14 @@ fPar.WindowStyle = 'docked';
 drawnow;
 
 %% set other parmeters for dataset
-NxMin = 2000;
-NxMax = 2000;
-NxCount = 1;
+NxMin = 100;
+NxMax = 1000;
+NxCount = 3;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 param.Nt = 100;
 param.D.A = 0.9;
 param.D.P = 1;
-param.D.S = 1.0e-2;
+param.D.S = 0.5e-1;
 param.bc.first = true;
 param.vals = vals;
 
@@ -80,16 +80,16 @@ drawnow;
 % drawnow;
 
 %% train or load ROM-I data
-% fid_1 = fopen('./data/train_1.mat');
-% if fid_1 ~= -1
-%     load('./data/train_1','train_1');
-%     [train_1] = genRom1(param,train_1);
-%     fclose(fid_1);
-% else
-[train_1] = genRom1(param);
-% end
+fid_1 = fopen('./data/train_1.mat');
+if fid_1 ~= -1
+    load('./data/train_1','train_1');
+    [train_1] = genRom1(param,train_1);
+    fclose(fid_1);
+else
+    [train_1] = genRom1(param);
+end
 
-% save('./data/train_1','train_1');
+save('./data/train_1','train_1');
 
 %% ROM-I train
 fPar = figure;
