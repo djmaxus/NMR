@@ -1,4 +1,4 @@
-function [POD,fig] = makePOD(data, init, mu, param,varargin)
+function [POD,fig] = makePOD(data, init, mu, param, varargin)
     %MAKEPOD Summary of this function goes here
     %   Detailed explanation goes here
     if length(varargin) >= 1
@@ -30,6 +30,7 @@ function [POD,fig] = makePOD(data, init, mu, param,varargin)
     %% SVD
     [POD.U,S,~] = svd(data,'econ');
     Nd = size(S,1);
+    POD.S = diag(S);
     dS = diag(S)/sum(diag(S));
     if param > 1
         POD.N = min(round(param),Nd);
@@ -66,6 +67,8 @@ function [POD,fig] = makePOD(data, init, mu, param,varargin)
         % reconstruction error
         X = POD.U * POD.U' * data;
         err = norm(data - X);
+        xlabel('Feature #');
+        xlabel('Feature value');
         title(['Reconstruction error: ',num2str(err)]);
         drawnow;
         % energy
@@ -79,6 +82,8 @@ function [POD,fig] = makePOD(data, init, mu, param,varargin)
         xline(POD.N);
         yline(POD.en);
         ylim([0,1]);
+        xlabel('Number of components');
+        ylabel('Singular values fraction');
         title([num2str(100 * POD.en),' % of basis energy',' in ',num2str(POD.N),' components']);
         drawnow;
     end
