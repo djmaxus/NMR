@@ -66,10 +66,10 @@ function [POD,fig] = makePOD(data, init, mu, param, varargin)
         hold off;
         % reconstruction error
         X = POD.U * POD.U' * data;
-        err = norm(data - X);
+        err = norm(data - X)/norm(data);
         xlabel('Feature #');
         xlabel('Feature value');
-        title(['Reconstruction error: ',num2str(err)]);
+        title(['Relative reconstruction error: ',num2str(err)]);
         drawnow;
         % energy
 %         waitforbuttonpress;
