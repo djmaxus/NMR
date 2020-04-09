@@ -15,8 +15,8 @@ function [POD,fig] = makePOD(data, init, mu, param, varargin)
     else
         POD.init = zeros(size(data(:,1)));
     end
-    
-    
+
+
     %% Substract mean
     if mu
         POD.mu = mean(data,2);
@@ -24,7 +24,7 @@ function [POD,fig] = makePOD(data, init, mu, param, varargin)
     else
         POD.mu = zeros(size(data(:,1)));
     end
-    
+
     %% Crop Data
     %     cropData;
     %% SVD
@@ -34,7 +34,7 @@ function [POD,fig] = makePOD(data, init, mu, param, varargin)
     dS = diag(S)/sum(diag(S));
     if param > 1
         POD.N = min(round(param),Nd);
-        
+
         POD.en = sum(dS(1:POD.N));
     elseif param > 0
         POD.en = param;
@@ -87,5 +87,5 @@ function [POD,fig] = makePOD(data, init, mu, param, varargin)
         title([num2str(100 * POD.en),' % of basis energy',' in ',num2str(POD.N),' components']);
         drawnow;
     end
-    
+
 end
