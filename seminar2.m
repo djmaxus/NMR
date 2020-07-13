@@ -7,15 +7,15 @@ addpath('./NMR');
 
 %% set samples
 % max parameter absolute value
-fid = fopen('./data/vals.mat');
-if fid ~= -1
-    load('./data/vals','vals','pMax');
-    fclose(fid);
-else
+% fid = fopen('./data/vals.mat');
+% if fid ~= -1
+%     load('./data/vals','vals','pMax');
+%     fclose(fid);
+% else
     pMax = 1;
     vals = setParSample(pMax);
-end
-save('./data/vals','vals','pMax');
+% end
+% save('./data/vals','vals','pMax');
 
 fPar = figure;
 fPar.WindowStyle = 'docked';
@@ -23,8 +23,8 @@ fPar.WindowStyle = 'docked';
 drawnow;
 
 %% set other parmeters for dataset
-NxMin = 1000;
-NxMax = 1000;
+NxMin = 5000;
+NxMax = 5000;
 NxCount = 1;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 param.Nt = 100;
@@ -48,14 +48,15 @@ bc = setBC(kind,pMax);
 
 % set diffusion
 D = setDiff(Nx,param.D);
-
+%%
 % solve FOM
-[FOM] = solveDif(Nx,param.Nt,bc,D,0);
+[FOM] = solveDif(Nx,param.Nt,bc,D);
 
 %% plot FOM
 fFOM = figure;
 fFOM.WindowStyle = 'docked';
 fFOM.Name = 'FOM';
+%%
 [fFOM] = plotSol(FOM,fFOM,true);
 drawnow;
 
@@ -80,16 +81,16 @@ drawnow;
 % drawnow;
 
 %% train or load ROM-I data
-fid_1 = fopen('./data/train_1.mat');
-if fid_1 ~= -1
-    load('./data/train_1','train_1');
-    [train_1] = genRom1(param,train_1);
-    fclose(fid_1);
-else
+% fid_1 = fopen('./data/train_1.mat');
+% if fid_1 ~= -1
+%     load('./data/train_1','train_1');
+%     [train_1] = genRom1(param,train_1);
+%     fclose(fid_1);
+% else
     [train_1] = genRom1(param);
-end
+% end
 
-save('./data/train_1','train_1');
+% save('./data/train_1','train_1');
 
 %% ROM-I train
 fPar = figure;
@@ -131,11 +132,12 @@ drawnow;
 [POD] = approxRom2(POD,train_2{iNx});
 
 %% ROM-II test
-[ROM_2] = solveDif(Nx,param.Nt,bc,D,2,0,POD);
+[ROM_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',POD);
 
 %% ROM-II plot
 fRom2 = figure;
 fRom2.WindowStyle = 'docked';
+%%
 [fRom2] = plotComp(FOM,ROM_2,D,fRom2);
 drawnow;
 
@@ -172,12 +174,12 @@ fRomDD.WindowStyle = 'docked';
 drawnow;
 
 %% ROM-III test
-% [ROM_3] = solveDif(Nx,param.Nt,bc,D,3,0,POD,Ydd);
+[ROM_3] = solveDif(Nx,param.Nt,bc,D,3,0,POD,Ydd);
 
 %% ROM-II plot
-% fRom3 = figure;
-% fRom3.WindowStyle = 'docked';
-% [fRom3] = plotComp(FOM,ROM_3,D,fRom3);
-% drawnow;
+fRom3 = figure;
+fRom3.WindowStyle = 'docked';
+[fRom3] = plotComp(FOM,ROM_3,D,fRom3);
+drawnow;
 
 
