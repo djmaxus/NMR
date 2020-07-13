@@ -23,7 +23,8 @@ function [fig] = plotComp(sol_1,sol_2,D,varargin)
     axis square;
     
     %% error
-    enum = abs(ROM.X - FOM.X);
+    x_rom = interp1(ROM.t,ROM.X',FOM.t)';
+    enum = abs(x_rom - FOM.X);
     denom = 3*sqrt(var(FOM.X,[],1));
     denom = denom + eq(denom,0);
     res = enum./denom;
