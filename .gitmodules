@@ -1,6 +1,1 @@
-[submodule "mrst-core"]
-	path = mrst-core
-	url = https://bitbucket.org/mrst/mrst-core.git
-[submodule "mrst-autodiff"]
-	path = mrst-autodiff
-	url = https://bitbucket.org/mrst/mrst-autodiff.git
+
