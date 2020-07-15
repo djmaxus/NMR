@@ -1,11 +1,6 @@
-function [fig] = plotComp(sol_1,sol_2,D,varargin)
+function [fig] = plotComp(sol_1,sol_2,D,fig)
     %PLOTCOMP Summary of this function goes here
     %   Detailed explanation goes here
-    if length(varargin) >= 1
-        fig = varargin{1};
-    else
-        fig = figure;
-    end
     %% rename
     FOM = sol_1;
     ROM = sol_2;
@@ -25,17 +20,15 @@ function [fig] = plotComp(sol_1,sol_2,D,varargin)
     %% error
     x_rom = interp1(ROM.t,ROM.X',FOM.t)';
     enum = abs(x_rom - FOM.X);
-    denom = 3*sqrt(var(FOM.X,[],1));
-    denom = denom + eq(denom,0);
-    res = enum./denom;
+    res = enum;
     
     subplot(2,3,3);
     Nx = size(FOM.X,1);
-    imagesc('CData',100*res,'XData',FOM.t,'YData',(1:Nx)./Nx);
+    imagesc('CData',res,'XData',FOM.t,'YData',(1:Nx)./Nx);
     xlim([0 1]);
     ylim([0 1]);
     colorbar;
-    title('$|\Delta ROM|$, \%','interpreter','latex');
+    title('$|\Delta ROM|$','interpreter','latex');
     xlabel('t');
     ylabel('x');
     axis square;
@@ -54,12 +47,12 @@ function [fig] = plotComp(sol_1,sol_2,D,varargin)
     %% error dynamics
     Nt = length(FOM.t)-1;
     subplot(2,3,5:6);
-    res = sum(res.^2,1)./size(enum,1);
-    plot((0:Nt)./(Nt),100*sqrt(res));
+    res = sqrt(mean(enum.^2,1));
+    plot((0:Nt)./(Nt),sqrt(res));
     xlim([0,1]);
     xlabel('t');
     ylabel('\Delta, %');
-    title('Relatve $$MSE(t)$$','interpreter','latex');
+    title('$$MSE(t)$$','interpreter','latex');
     
     legend('Relative MSE');
     
@@ -67,8 +60,11 @@ function [fig] = plotComp(sol_1,sol_2,D,varargin)
     spd.lin =  FOM.timelog.linsol / ROM.timelog.linsol;
     spd.bld =  FOM.timelog.bld / ROM.timelog.bld;
     spd.iter =  ROM.timelog.iters.bld_avg;
-    sms = ['Speed up: (',num2str(spd.all),', ',num2str(spd.lin),', ',num2str(spd.bld),', ',num2str(spd.iter),')'];
-    disp(sms);
+    sms = ['ALL = ',num2str(spd.all),newline(),...
+           'LIN = ',num2str(spd.lin),newline(),...
+           'BLD = ',num2str(spd.bld),newline(),...
+           'ITR = ',num2str(spd.iter)];
+    disp(['----',newline(),sms,newline(),'----']);
     fig.Name = sms;
     
 end
