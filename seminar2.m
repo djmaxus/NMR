@@ -49,7 +49,7 @@ iNx = NxCount;
 Nx = param.grids(iNx);
 
 % BC kind
-kind = 1;
+kind = 2;
 
 % set boundary condition
 bc = setBC(kind,pMax);
@@ -78,7 +78,7 @@ POD.X.plotSummary(f_rom_1,'layout','built-in'); drawnow;
 plotComp(FOM,ROM_1,D,f_comp_1);
 
 %% train or load ROM-II data
-train_2 = genRom2(param,train_1);
+train_2 = train_1;...genRom2(param,train_1);
 
 %% ROM-II train
 [POD] = truncRom2(POD,train_2{iNx});
