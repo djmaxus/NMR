@@ -7,14 +7,17 @@ function [POD] = truncRom2(POD,train,varargin)
         R = [R,train.sol{i}.Rx];
         J = [J,train.sol{i}.Jnz];
     end
-    fTrainR = figure;
-    fTrainR.WindowStyle = 'docked';
-    POD.Rx = makePOD(R,false,false,0.99,fTrainR);
-    fTrainJ = figure;
-    fTrainJ.WindowStyle = 'docked';
-    POD.Jnz = makePOD(J,false,false,0.99,fTrainJ);
+    r0 = zeros(size(R,1),1);
+    j0 = zeros(size(J,1),1);
+    POD.Rx = PCA(R,0.99,'init',r0);
+    POD.Jnz = PCA(J,0.99,'init',j0);
     
-    POD.Rx.N = max(POD.Rx.N,POD.X.N);
-    POD.Jnz.N = max(POD.Jnz.N,POD.X.N);
+    Nr = max(POD.Rx.npc(),POD.X.npc());
+    Nj = max(POD.Jnz.npc(),POD.X.npc());
+    
+    POD.Rx.crit_num = true;
+    POD.Rx.param = Nr;
+    POD.Jnz.crit_num = true;
+    POD.Jnz.param = Nj;
 end
 
