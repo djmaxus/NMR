@@ -16,7 +16,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     
     %% ROM mode processing
     rom_stage = 0;
-    train_mode = 0;
+    train_mode = false;
     POD = [];
     Ydd = [];
     if length(varargin) >= 2
@@ -97,9 +97,9 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     x0 = a * sin(p*2*pi*(1:Nx)'./Nx);
     X = [x0,x0];
     if is_encoded
-        Y = zeros(POD.X.N,2);
-        X = forward(Y,POD.X);
-        GP = POD.X.U(:,1:POD.X.N);
+        Y = zeros(POD.X.npc(),2);
+        X = POD.X.decode(Y);
+        GP = POD.X.u(:,1:POD.X.npc());
     end
     
     % paramter distribution
@@ -116,7 +116,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     sol.t = zeros(1,round(1/dt_min)+1);
     sol.X = zeros(Nx,round(1/dt_min)+1);
     if is_encoded
-        sol.Y = zeros(POD.X.N,round(1/dt_min)+1);
+        sol.Y = zeros(POD.X.npc(),round(1/dt_min)+1);
     end
     if train_mode
         sol.Rx = [];
@@ -158,7 +158,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             if and(is_encoded,~is_step_fom)
                 % decoding
                 t_pod = tic;
-                X(:,2) = forward(Y(:,2),POD.X);
+                X(:,2) = POD.X.decode(Y(:,2));
                 t_pod = toc(t_pod);
                 sol.timelog.pod = sol.timelog.pod + t_pod;
             end
@@ -208,7 +208,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 t = t+dt;
                 if and(is_encoded,~is_step_fom)
                     Y(:,1) = Y(:,2);
-                    X(:,1) = forward(Y(:,1),POD.X);
+                    X(:,1) = POD.X.decode(Y(:,1));
                 else
                     X(:,1) = X(:,2);
                 end
