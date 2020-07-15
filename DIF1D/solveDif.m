@@ -86,7 +86,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     % time settings
     t = 0;
     dt = 1/Nt;
-    dt_min = dt*1e-1;
+    dt_min = dt;
     dt_max = dt;
     %     if train_mode
     %         dt_min = min(dt,1/Nx);
