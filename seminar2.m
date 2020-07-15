@@ -31,8 +31,8 @@ vals = [];
 % drawnow;
 
 %% set other parmeters for dataset
-NxMin = 2000;
-NxMax = 2000;
+NxMin = 10000;
+NxMax = NxMin;
 NxCount = 1;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 param.Nt = 100;
