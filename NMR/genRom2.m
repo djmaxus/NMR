@@ -32,7 +32,9 @@ function [out] = genRom2(param,train_1,varargin)
             parfor i = 1:Ns
                 bc_i = param.bc;
                 bc_i.val = param.vals(i,:);
-                sol{i} = solveDif(data.Nx,param.Nt,bc_i,D,1,1,POD);
+                sol{i} = solveDif(data.Nx,param.Nt,bc_i,D,'train_mode',true,...
+                                                          'rom_stage',1,...
+                                                          'encoder',POD);
                 disp(i);
             end
             data.sol = sol;
