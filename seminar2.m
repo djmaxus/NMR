@@ -1,10 +1,4 @@
-%% startup
-close all;
-clc;
-addpath('./DIF1D');
-addpath('./POD');
-addpath('./NMR');
-
+startup;
 %% set samples
 % max parameter absolute value
 % fid = fopen('./data/vals.mat');
@@ -99,10 +93,15 @@ fPar.WindowStyle = 'docked';
 drawnow;
 
 %% ROM-I train
-[POD.X] = truncRom1(train_1{iNx},true);
-
+[POD.X] = truncRom1(train_1{iNx});
+%% ROM-I figure
+f_rom_1 = figure;
+f_rom_1.WindowStyle = 'docked';
+f_rom_1.Name = 'PCA ROM-I';
+%% ROM-I plot
+POD.X.plotSummary(f_rom_1,'layout','built-in');
 %% ROM-I test
-[ROM_1] = solveDif(Nx,param.Nt,bc,D,1,0,POD);
+[ROM_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',POD);
 
 %% ROM-I plot
 fRom1 = figure;
@@ -127,7 +126,16 @@ drawnow;
 
 %% ROM-II train
 [POD] = truncRom2(POD,train_2{iNx});
-
+%% ROM-II figure
+f_rom_2_r = figure;
+f_rom_2_r.WindowStyle = 'docked';
+f_rom_2_r.Name = 'PCA ROM-II R';
+f_rom_2_j = figure;
+f_rom_2_j.WindowStyle = 'docked';
+f_rom_2_j.Name = 'PCA ROM-II J';
+%% ROM-I plot
+POD.Rx.plotSummary(f_rom_2_r,'layout','built-in');
+POD.Jnz.plotSummary(f_rom_2_j,'layout','built-in');
 %% Gappy-POD train
 [POD] = approxRom2(POD,train_2{iNx});
 
