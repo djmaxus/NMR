@@ -29,11 +29,11 @@ function [out] = genRom2(param,train_1,varargin)
             [POD.X] = truncRom1(train_1{iNx});
             D = setDiff(data.Nx,param.D);
             disp(['Nx: ',num2str(data.Nx)]);
-            parfor i = 1:Ns
+            for i = 1:Ns
                 bc_i = param.bc;
                 bc_i.val = param.vals(i,:);
                 sol{i} = solveDif(data.Nx,param.Nt,bc_i,D,'train_mode',true,...
-                                                          'rom_stage',1,...
+                                                          'rom_stage',0,...
                                                           'encoder',POD);
                 disp(i);
             end

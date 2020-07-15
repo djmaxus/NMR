@@ -17,6 +17,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     %% ROM mode processing
     rom_stage = 0;
     train_mode = false;
+    adaptive_fom = false;
     POD = [];
     Ydd = [];
     if length(varargin) >= 2
@@ -34,12 +35,15 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             if strcmp(varname,'dd_approx')
                 Ydd = varargin{2};
             end
+            if strcmp(varname,'adaptive_fom')
+                adaptive_fom = varargin{2};
+            end
             for i = 1:2
                 varargin(1) = [];
             end
         end
     end
-    is_step_fom = false;
+    is_step_fom = true;
     %% stage name
     switch rom_stage
         case 0
@@ -97,8 +101,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     x0 = a * sin(p*2*pi*(1:Nx)'./Nx);
     X = [x0,x0];
     if is_encoded
-        Y = zeros(POD.X.npc(),2);
-        X = POD.X.decode(Y);
+        Y = POD.X.encode(X);
+        %X = POD.X.decode(Y);
         GP = POD.X.u(:,1:POD.X.npc());
     end
     
@@ -108,7 +112,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     D = D*Nx^2;
     
     % convergence parameters
-    kmax = 8;
+    kmax = 12;
     kmin = 4;
     crit_conv = 1e-3;
     
@@ -184,7 +188,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             if train_mode
                 % collect residual snapshots
                 sol.Rx = [sol.Rx,W];
-                sol.Jnz = [sol.Jnz,Jf];
+                sol.Jnz = [sol.Jnz,Jf.*[1,-1]];
             end
             
             if and(is_encoded,~is_step_fom)
@@ -197,10 +201,11 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             
             % convergence
             delta = norm(J' * R);
+            %             delta = norm(R);
             if k == 1
                 R0 = delta;
             end
-            is_converged = delta <= crit_conv*norm(R0);
+            is_converged = delta <= crit_conv*R0;
             
             if is_converged
                 sol.timelog.kn(nstep) = k;
@@ -218,8 +223,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                     dt = min(dt,dt_max);
                 end
                 if and(is_encoded,is_step_fom)
-                    Y = backward(X,POD.X);
-                end 
+                    Y = POD.X.encode(X);
+                end
                 waitbar(t/1,wb);
                 break;
             elseif k == kmax
@@ -228,10 +233,10 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
             
             % linsolve
-%             [Qj,Rj] = qr(J);
+            %             [Qj,Rj] = qr(J);
             t_lin_solve = tic;
             dX = (J'*J) \ (-J' * R);
-%             dX = Rj \ (-Qj' * R);
+            %             dX = Rj \ (-Qj' * R);
             t_lin_solve = toc(t_lin_solve);
             sol.timelog.linsol = sol.timelog.linsol + t_lin_solve;
             
@@ -247,17 +252,20 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 X(:,2) = X(:,2) + dX;
             end
         end
-        if and(~is_step_fom,dt < 1/Nt)
-            is_step_fom = true;
-            disp('FOM steps: on');
+        if adaptive_fom
+            if and(~is_step_fom,dt < 1/Nt)
+                %             error('Adaptive FOM enabled');
+                is_step_fom = true;
+                disp('FOM steps: on');
+            end
         end
         if and(is_step_fom,dt >= 1/Nt)
             is_step_fom = false;
             disp('FOM steps: off');
         end
         if dt + 1e-10 < dt_min
-            if(is_step_fom)
-                disp(['not converged, relative residual = ',num2str(delta/norm(R0))]);
+            if or(is_step_fom,~adaptive_fom)
+                disp(['not converged, relative residual = ',num2str(norm(delta)/norm(R0))]);
                 break;
             end
         end
@@ -280,20 +288,20 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     sol.timelog.iters.lin = sum(sol.timelog.kn-1,'all');
     sol.timelog.lin_avg = sol.timelog.lin/sol.timelog.iters.lin;
     sol.timelog.bld_avg = sol.timelog.bld/sol.timelog.iters.bld;
-    sol.timelog.iters.lin_avg = sol.timelog.iters.lin / Nt;
-    sol.timelog.iters.bld_avg = sol.timelog.iters.bld / Nt;
+    sol.timelog.iters.lin_avg = sol.timelog.iters.lin / length(sol.timelog.kn);
+    sol.timelog.iters.bld_avg = sol.timelog.iters.bld / (length(sol.timelog.kn)-1);
     delete(wb);
 end
 
 function [is_encoded,is_gappy] = setRomStage(rom_stage,is_step_fom)
     is_encoded = false;
     is_gappy = false;
-    if ~is_step_fom
-        if rom_stage >= 1
-            is_encoded = true;
-        end
-        if rom_stage >= 2
-            is_gappy = true;
-        end
+    
+    if rom_stage >= 1
+        is_encoded = true;
     end
+    if rom_stage >= 2
+        is_gappy = true;
+    end
+    
 end

@@ -14,7 +14,7 @@ function [Jt,Jf] = buildFlow(X,dt,D,bc,POD)
     end
     if nmr
         % gappy;
-        Jf = applyOblique(Jf,POD);  
+        Jf = applyOblique(Jf.*[1,-1],POD).*[1,-1];  
     end
 end
 

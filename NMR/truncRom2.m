@@ -1,4 +1,4 @@
-function [POD] = truncRom2(POD,train,varargin)
+function [POD] = truncRom2(POD,train)
     %TRAINROM1 Summary of this function goes here
     %   Detailed explanation goes here
     R = [];
@@ -10,14 +10,12 @@ function [POD] = truncRom2(POD,train,varargin)
     r0 = zeros(size(R,1),1);
     j0 = zeros(size(J,1),1);
     POD.Rx = PCA(R,0.99,'init',r0);
-    POD.Jnz = PCA(J,0.99,'init',j0);
+    POD.Jnz = PCA(J,0.99);
     
     Nr = max(POD.Rx.npc(),POD.X.npc());
     Nj = max(POD.Jnz.npc(),POD.X.npc());
     
-    POD.Rx.crit_num = true;
-    POD.Rx.param = Nr;
-    POD.Jnz.crit_num = true;
-    POD.Jnz.param = Nj;
+    POD.Rx = POD.Rx.setNPC(Nr);
+    POD.Jnz = POD.Jnz.setNPC(Nj);
 end
 

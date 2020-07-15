@@ -28,10 +28,11 @@ function [out] = genRom1(param,varargin)
             data.Nx = param.grids(iNx);
             D = setDiff(data.Nx,param.D);
             disp(['Nx: ',num2str(data.Nx)]);
-            parfor i = 1:Ns
+            for i = 1:Ns
                 bc_i = param.bc;
                 bc_i.val = param.vals(i,:);
-                sol{i} = solveDif(data.Nx,param.Nt,bc_i,D,0,1);
+                sol{i} = solveDif(data.Nx,param.Nt,bc_i,D,'train_mode',true,...
+                                                          'rom_stage',0);
                 disp(i);
             end
             data.sol = sol;
