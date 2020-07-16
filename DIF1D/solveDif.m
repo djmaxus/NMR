@@ -103,7 +103,6 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     if is_encoded
         Y = POD.X.encode(X);
         %X = POD.X.decode(Y);
-        GP = POD.X.u(:,1:POD.X.npc());
     end
     
     % paramter distribution
@@ -194,7 +193,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             if and(is_encoded,~is_step_fom)
                 % POD derivative
                 t_projection = tic;
-                J = J * GP;
+                J = J * POD.X.JD(Y(:,2));
                 t_projection = toc(t_projection);
                 sol.timelog.proj = sol.timelog.proj + t_projection;
             end
