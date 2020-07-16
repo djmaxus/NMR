@@ -27,7 +27,7 @@ function [] = plotComp(sol_1,sol_2,D,fig)
     xlim(sp3,[0 1]);
     ylim(sp3,[0 1]);
     colorbar(sp3);
-    colormap(sp3,'jet');
+    colormap(sp3,'gray');
     title(sp3,'$\Delta ROM$','interpreter','latex');
     xlabel(sp3,'t');
     ylabel(sp3,'x');
@@ -61,8 +61,8 @@ function [] = plotComp(sol_1,sol_2,D,fig)
            'LIN = ',num2str(spd.lin),newline(),...
            'BLD = ',num2str(spd.bld),newline(),...
            'ITR = ',num2str(spd.iter)];
-    disp(['----',newline(),sms,newline(),'----']);
-    fig.Name = sms;
+    disp(['----',fig.Name,newline(),sms,newline(),'----']);
+%     fig.Name = sms;
     
 end
 
