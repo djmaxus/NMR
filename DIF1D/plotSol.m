@@ -51,7 +51,7 @@ function plotSolFom(ax,sol,Nx)
     ylim(ax,[0,1]);
     colorbar(ax);
     colormap(ax,'jet');
-    ttl = ['$',sol.name,' , t_{CPU} = ',num2str(sol.timelog.overall),'$'];
+    ttl = ['$',sol.name,', t_{CPU} = ',num2str(sol.timelog.overall),'$'];
     title(ax,ttl,'interpreter','latex');
     xlabel(ax,'t');
     ylabel(ax,'x');
