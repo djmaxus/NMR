@@ -49,7 +49,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
         case 0
             sol.name = 'FOM';
         case 1
-            sol.name = 'ROM_I';
+            sol.name = 'ROM_{I}';
         case 2
             sol.name = 'ROM_{II}';
         otherwise
@@ -110,8 +110,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     D = D*Nx^2;
     
     % convergence parameters
-    kmax = 12;
-    kmin = 4;
+    kmax = 8;
+    kmin = 3;
     crit_conv = 1e-3;
     
     % dataset initialization
@@ -126,11 +126,15 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     end
     
     % solution process
-    wb = waitbar(t,'Forward problem');
+    wb_msg = [sol.name,': step '];
+    wb = waitbar(t,wb_msg,'Position','left');
     R0 = 1;
     nstep = 1;
     while t < 1
         dt = min(dt, 1-t);
+        if dt < 1e-10
+            break;
+        end
         
         if and(is_encoded,~is_step_fom)
             Y(:,2) = Y(:,1);
@@ -223,7 +227,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 if and(is_encoded,is_step_fom)
                     Y = POD.X.encode(X);
                 end
-                waitbar(t/1,wb);
+                
                 break;
             elseif k == kmax
                 dt = dt / 4;
@@ -254,14 +258,15 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             if and(~is_step_fom,dt < 1/Nt)
                 %             error('Adaptive FOM enabled');
                 is_step_fom = true;
-                warning('FOM steps: on');
+                msg_add = 'FOM';
             end
         end
         if and(is_step_fom,dt >= 1/Nt)
             is_step_fom = false;
-            warning('FOM steps: off');
+            msg_add = 'DEF';
         end
-        if dt + 1e-10 < dt_min
+        waitbar(t/1,wb,[wb_msg,msg_add]);
+        if and(~is_converged,dt + 1e-10 < dt_min)
             if or(is_step_fom,~adaptive_fom)
                 warning(['not converged, relative residual = ',num2str(norm(delta)/norm(R0))]);
                 break;
