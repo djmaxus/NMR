@@ -86,15 +86,14 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     % time settings
     t = 0;
     dt = 1/Nt;
-    dt_min = dt;
-    dt_max = dt;
-    %     if train_mode
-    %         dt_min = min(dt,1/Nx);
-    %         dt_min = dt;
-    %     else
-    %         dt_min = dt;
-    %         dt_max = max(dt,10/Nx);
-    %     end
+    
+    if train_mode
+        dt_min = dt;
+        dt_max = dt;
+    else
+        dt_min = dt*1e-1;
+        dt_max = dt;
+    end
     %% initial condition
     a = 1.0;
     p = 2;
@@ -255,16 +254,16 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             if and(~is_step_fom,dt < 1/Nt)
                 %             error('Adaptive FOM enabled');
                 is_step_fom = true;
-                disp('FOM steps: on');
+                warning('FOM steps: on');
             end
         end
         if and(is_step_fom,dt >= 1/Nt)
             is_step_fom = false;
-            disp('FOM steps: off');
+            warning('FOM steps: off');
         end
         if dt + 1e-10 < dt_min
             if or(is_step_fom,~adaptive_fom)
-                disp(['not converged, relative residual = ',num2str(norm(delta)/norm(R0))]);
+                warning(['not converged, relative residual = ',num2str(norm(delta)/norm(R0))]);
                 break;
             end
         end
