@@ -104,7 +104,7 @@ plotComp(FOM,ROM_2,D,f_comp_2);
 %% VAC-II test
 vac.Rx = POD.Rx;
 vac.Jnz = POD.Jnz;
-[vac_sol_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',vac);
+[vac_sol_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',vac,'adaptive_fom',1);
 plotComp(FOM,vac_sol_2,D,f_comp_vac_2);
 
 %% sequential VAC
