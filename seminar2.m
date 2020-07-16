@@ -12,6 +12,9 @@ f_rom_1.Name = 'PCA ROM-I';
 % ROM-I plot
 f_comp_1 = figure;
 f_comp_1.WindowStyle = 'docked';
+% ROM-I plot
+f_comp_vac = figure;
+f_comp_vac.WindowStyle = 'docked';
 % ROM-II figure
 f_rom_2_r = figure;
 f_rom_2_r.WindowStyle = 'docked';
@@ -31,7 +34,7 @@ vals = [];
 % drawnow;
 
 %% set other parmeters for dataset
-NxMin = 10000;
+NxMin = 1000;
 NxMax = NxMin;
 NxCount = 1;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
@@ -61,7 +64,6 @@ D = setDiff(Nx,param.D);
 %%
 % solve FOM
 [FOM] = solveDif(Nx,param.Nt,bc,D);
-%%
 plotSol(FOM,fFOM);
 
 %% train or load ROM-I data
@@ -69,14 +71,17 @@ plotSol(FOM,fFOM);
 
 %% ROM-I train
 [POD.X] = truncRom1(train_1{iNx});
-
-%% ROM-I plot
 POD.X.plotSummary(f_rom_1,'layout','built-in'); drawnow;
+                                    
 %% ROM-I test
 [ROM_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',POD);
-%%
 plotComp(FOM,ROM_1,D,f_comp_1);
 
+%% VAC
+vac.X = VAC(data,POD.X.npc());
+%% VAC test
+[vac_sol] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac);
+plotComp(FOM,vac_sol,D,f_comp_vac);
 %% train or load ROM-II data
 train_2 = train_1;...genRom2(param,train_1);
 
