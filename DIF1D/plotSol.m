@@ -10,7 +10,6 @@ function [] = plotSol(sol,where)
         is_ext = true;
     elseif isa(where,'matlab.graphics.axis.Axes')
         is_ext = false;
-        ax = where;
     end
     Nx = size(sol.X,1);
     if is_ext
@@ -27,33 +26,34 @@ function [] = plotSol(sol,where)
         ylabel(sp2,'$D_0$','interpreter','latex');
         ttl = '$D_0(x)$';
         title(sp2,ttl,'interpreter','latex');
-        %% relative slices
-        
+        %% relative slices  
         lgnd = cell(1,3);
         tidx = [2;round(length(sol.t)/2);length(sol.t)];
         for i = 1:length(tidx)
             lgnd{i} = ['n = ',num2str(tidx(i)-1)];
         end
-        for nt = tidx
-            plot(sp3,(1:Nx)./Nx,sol.X(:,nt));
-            hold on;
-        end
+        plot(sp3,(1:Nx)./Nx,sol.X(:,tidx));
         xlabel(sp3,'$x$','interpreter','latex');
         ylabel(sp3,'$u$','interpreter','latex');
         ttl = '$u(x,t)$';
         title(sp3,ttl,'interpreter','latex');
-        hold off;
         legend(sp3,lgnd{1},lgnd{2},lgnd{3});
+        plotSolFom(ax,sol,Nx);
+    else
+        plotSolFom(where,sol,Nx);
     end
-        imagesc(ax,'CData',sol.X,'XData',sol.t,'YData',(1:Nx)./Nx);
-        xlim(ax,[0,1]);
-        ylim(ax,[0,1]);
-        colorbar(ax);
-        colormap(ax,'jet');
-        ttl = ['$',sol.name,' , t_{CPU} = ',num2str(sol.timelog.overall),'$'];
-        title(ax,ttl,'interpreter','latex');
-        xlabel(ax,'t');
-        ylabel(ax,'x');
     drawnow;
+end
+
+function plotSolFom(ax,sol,Nx)
+    imagesc(ax,'CData',sol.X,'XData',sol.t,'YData',(1:Nx)./Nx);
+    xlim(ax,[0,1]);
+    ylim(ax,[0,1]);
+    colorbar(ax);
+    colormap(ax,'jet');
+    ttl = ['$',sol.name,' , t_{CPU} = ',num2str(sol.timelog.overall),'$'];
+    title(ax,ttl,'interpreter','latex');
+    xlabel(ax,'t');
+    ylabel(ax,'x');
 end
 
