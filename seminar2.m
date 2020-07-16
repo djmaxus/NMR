@@ -8,23 +8,32 @@ fFOM.Name = 'FOM';
 % ROM-I figure
 f_rom_1 = figure;
 f_rom_1.WindowStyle = 'docked';
-f_rom_1.Name = 'PCA ROM-I';
-% ROM-I plot
-f_comp_1 = figure;
-f_comp_1.WindowStyle = 'docked';
-% ROM-I plot
-f_comp_vac = figure;
-f_comp_vac.WindowStyle = 'docked';
+f_rom_1.Name = 'PCA-I';
 % ROM-II figure
 f_rom_2_r = figure;
 f_rom_2_r.WindowStyle = 'docked';
-f_rom_2_r.Name = 'PCA ROM-II R';
+f_rom_2_r.Name = 'PCA-II R';
+%
 f_rom_2_j = figure;
 f_rom_2_j.WindowStyle = 'docked';
-f_rom_2_j.Name = 'PCA ROM-II J';
+f_rom_2_j.Name = 'PCA-II J';
+% ROM-I plot
+f_comp_1 = figure;
+f_comp_1.WindowStyle = 'docked';
+f_comp_1.Name = 'ROM-I';
+% VAC-I plot
+f_comp_vac_1 = figure;
+f_comp_vac_1.WindowStyle = 'docked';
+f_comp_vac_1.Name = 'VAC-I';
 % ROM-II plot
-f_sol_2 = figure;
-f_sol_2.WindowStyle = 'docked';
+f_comp_2 = figure;
+f_comp_2.WindowStyle = 'docked';
+f_comp_2.Name = 'ROM-II';
+% VAC-II plot
+f_comp_vac_2 = figure;
+f_comp_vac_2.WindowStyle = 'docked';
+f_comp_vac_2.Name = 'VAC-II';
+
 %% set samples
 pMax = 1;
 vals = [];
@@ -46,14 +55,11 @@ param.bc.first = false;
 param.vals = vals;
 
 %% numerical solution
-
 % space grid
 iNx = NxCount;
 Nx = param.grids(iNx);
-
 % BC kind
-kind = 2;
-
+kind = 1;
 % set boundary condition
 bc = setBC(kind,pMax);
 vals = bc.val;
@@ -78,28 +84,46 @@ POD.X.plotSummary(f_rom_1,'layout','built-in'); drawnow;
 plotComp(FOM,ROM_1,D,f_comp_1);
 
 %% VAC
-vac.X = VAC(data,POD.X.npc());
+data_1 = train_1{1}.sol{1}.X;
+vac.X = VAC(data_1,POD.X.npc());
 %% VAC test
-[vac_sol] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac);
-plotComp(FOM,vac_sol,D,f_comp_vac);
+[vac_sol_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac);
+plotComp(FOM,vac_sol_1,D,f_comp_vac_1);
 %% train or load ROM-II data
 train_2 = train_1;...genRom2(param,train_1);
 
 %% ROM-II train
 [POD] = truncRom2(POD,train_2{iNx});
-%% Gappy-POD train
 [POD] = approxRom2(POD,train_2{iNx});
-
-%% ROM-I plot
 POD.Rx.plotSummary(f_rom_2_r,'layout','built-in');
 POD.Jnz.plotSummary(f_rom_2_j,'layout','built-in');
 drawnow;
 %% ROM-II test
 [ROM_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',POD);
+plotComp(FOM,ROM_2,D,f_comp_2);
+%% VAC-II test
+vac.Rx = POD.Rx;
+vac.Jnz = POD.Jnz;
+[vac_sol_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',vac);
+plotComp(FOM,vac_sol_2,D,f_comp_vac_2);
 
-%%
-plotComp(FOM,ROM_2,D,f_sol_2);
-
+%% sequential VAC
+X = train_1{1}.sol{1}.X;
+Nx = size(X,1);
+N = POD.X.npc();
+dX = cell(1,N);
+vac_seq = cell(1,N);
+for i = 1:N
+    if i == 1
+        dx = X;
+        init = dx(:,1);
+    else
+        dx = dX{i-1};
+        init = dx(:,1);
+    end
+    vac_seq{i} = VAC(dx,1,'init',init);
+    dX{i} = dx - vac_seq{i}.truncate(dx);
+end
 %%
 % %% Data-driven approximation demo
 % fGrid = figure;
