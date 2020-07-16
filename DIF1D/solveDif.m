@@ -127,7 +127,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     
     % solution process
     wb_msg = [sol.name,': step '];
-    wb = waitbar(t,wb_msg,'Position','left');
+    wb = waitbar(t,wb_msg);
     R0 = 1;
     nstep = 1;
     while t < 1
