@@ -59,7 +59,7 @@ param.vals = vals;
 iNx = NxCount;
 Nx = param.grids(iNx);
 % BC kind
-kind = 1;
+kind = 2;
 % set boundary condition
 bc = setBC(kind,pMax);
 vals = bc.val;
