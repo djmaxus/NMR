@@ -39,10 +39,13 @@ function [] = plotSol(sol,where)
         title(sp3,ttl,'interpreter','latex');
         legend(sp3,lgnd{1},lgnd{2},lgnd{3});
         plotSolFom(ax,sol,Nx);
+        drawnow;
+        figure(where);
     else
         plotSolFom(where,sol,Nx);
+        drawnow;
     end
-    drawnow;
+    
 end
 
 function plotSolFom(ax,sol,Nx)
