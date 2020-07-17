@@ -43,7 +43,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
         end
     end
-    is_step_fom = true;
+    is_step_fom = false;
     %% stage name
     switch rom_stage
         case 0
@@ -58,7 +58,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     
     
     %% encoding status
-    [is_encoded,is_gappy] = setRomStage(rom_stage,is_step_fom);
+    [is_encoded,is_gappy] = setRomStage(rom_stage);
     if is_encoded
         if isempty(POD)
             error('Variable subspace POD.X required');
@@ -91,7 +91,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
         dt_min = dt;
         dt_max = dt;
     else
-        dt_min = dt*1e-1;
+        dt_min = dt;
         dt_max = dt;
     end
     %% initial condition
@@ -101,7 +101,6 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     X = [x0,x0];
     if is_encoded
         Y = POD.X.encode(X);
-        %X = POD.X.decode(Y);
     end
     
     % paramter distribution
@@ -110,8 +109,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     D = D*Nx^2;
     
     % convergence parameters
-    kmax = 8;
-    kmin = 3;
+    kmax = 12;
+    kmin = 4;
     crit_conv = 1e-3;
     
     % dataset initialization
@@ -202,7 +201,9 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
             
             % convergence
-            delta = norm(J' * R);
+            R = J'*R;
+            J = J' * J;
+            delta = norm(R);
             %             delta = norm(R);
             if k == 1
                 R0 = delta;
@@ -230,15 +231,13 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 
                 break;
             elseif k == kmax
-                dt = dt / 4;
+                %                 dt = dt / 4;
                 break;
             end
             
             % linsolve
-            %             [Qj,Rj] = qr(J);
             t_lin_solve = tic;
-            dX = (J'*J) \ (-J' * R);
-            %             dX = Rj \ (-Qj' * R);
+            dX = (J) \ (-R);
             t_lin_solve = toc(t_lin_solve);
             sol.timelog.linsol = sol.timelog.linsol + t_lin_solve;
             
@@ -254,24 +253,29 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 X(:,2) = X(:,2) + dX;
             end
         end
-        if adaptive_fom
-            if and(~is_step_fom,dt < 1/Nt)
-                %             error('Adaptive FOM enabled');
-                is_step_fom = true;
-                msg_add = 'FOM';
+        
+        if is_converged
+            waitbar(t/1,wb,[wb_msg,msg_add(is_step_fom)]);
+            if and(is_step_fom,dt >= 1/Nt)
+                is_step_fom = false;
             end
         end
-        if and(is_step_fom,dt >= 1/Nt)
-            is_step_fom = false;
-            msg_add = 'DEF';
-        end
-        waitbar(t/1,wb,[wb_msg,msg_add]);
-        if and(~is_converged,dt + 1e-10 < dt_min)
-            if or(is_step_fom,~adaptive_fom)
-                warning(['not converged, relative residual = ',num2str(norm(delta)/norm(R0))]);
+        
+        if and(~is_converged,k >= kmax)
+            if adaptive_fom
+                if (~is_step_fom)
+                   is_step_fom = true;
+                   continue;
+                end
+            end
+            if (dt < dt_min)
+                warning(['Not converged',newline(),...
+                'Relative residual: ', num2str(delta/R0)]);
                 break;
             end
+            dt = dt/4;
         end
+        
     end
     
     sol.t(nstep) = t;
@@ -296,7 +300,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     delete(wb);
 end
 
-function [is_encoded,is_gappy] = setRomStage(rom_stage,is_step_fom)
+function [is_encoded,is_gappy] = setRomStage(rom_stage)
     is_encoded = false;
     is_gappy = false;
     
@@ -307,4 +311,12 @@ function [is_encoded,is_gappy] = setRomStage(rom_stage,is_step_fom)
         is_gappy = true;
     end
     
+end
+
+function [out] = msg_add(is_fom)
+    if is_fom
+        out = 'FOM';
+    else
+        out = 'DEF';
+    end
 end
