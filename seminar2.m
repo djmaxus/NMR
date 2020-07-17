@@ -51,7 +51,7 @@ vals = [];
 % drawnow;
 
 %% set other parmeters for dataset
-NxMin = 1000;
+NxMin = 5000;
 NxMax = NxMin;
 NxCount = 1;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
@@ -67,7 +67,7 @@ param.vals = vals;
 iNx = NxCount;
 Nx = param.grids(iNx);
 % BC kind
-kind = 2;
+kind = 1;
 % set boundary condition
 bc = setBC(kind,pMax);
 vals = bc.val;
@@ -81,26 +81,23 @@ D = setDiff(Nx,param.D);
 plotSol(FOM,fFOM);
 
 %% train or load ROM-I data
-[train_1] = genRom1(param);
+train_1 = cell(1);
+train_1{1}.sol = cell(1);
+train_1{1}.sol{1}.X = FOM.X;
+% [train_1] = genRom1(param);
 
 %% ROM-I train
 [POD.X] = truncRom1(train_1{iNx});
 POD.X.plotSummary(f_rom_1,'layout','built-in'); drawnow;
                                     
 %% ROM-I test
-[ROM_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',POD);
+[ROM_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',POD,'train_mode',true);
 plotComp(FOM,ROM_1,D,f_comp_1);
-
-%% VAC
-data_1 = train_1{1}.sol{1}.X;
-vac.X = VAC(data_1,POD.X.npc());
-%% VAC test
-[vac_sol_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac);
-plotComp(FOM,vac_sol_1,D,f_comp_vac_1);
 %% train or load ROM-II data
-train_2 = genRom2(param,vac);
-train_2_vac = genRom2(param,POD);
-
+train_2 = cell(1);
+train_2{1}.sol = cell(1);
+train_2{1}.sol{1} = ROM_1;
+% train_2 = genRom2(param,POD);
 %% ROM-II train
 [POD] = truncRom2(POD,train_2{iNx});
 [POD] = approxRom2(POD,train_2{iNx});
@@ -109,13 +106,21 @@ POD.Jnz.plotSummary(f_rom_2_j,'layout','built-in');
 %% ROM-II test
 [ROM_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',POD);
 plotComp(FOM,ROM_2,D,f_comp_2);
+%% VAC
+data_1 = train_1{1}.sol{1}.X;
+vac.X = VAC(data_1,POD.X.npc(),'init',data_1(:,1));
+%% VAC test
+[vac_sol_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac);
+plotComp(FOM,vac_sol_1,D,f_comp_vac_1);
+%% VAC-II train
+train_2_vac = genRom2(param,vac);
 %% VAC-II train
 [vac] = truncRom2(vac,train_2_vac{iNx});
 [vac] = approxRom2(vac,train_2_vac{iNx});
 vac.Rx.plotSummary(f_vac_2_r,'layout','built-in');
 vac.Jnz.plotSummary(f_vac_2_j,'layout','built-in');
 %% VAC-II test
-[vac_sol_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',vac,'adaptive_fom',1);
+[vac_sol_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',vac,'adaptive_fom',0);
 plotComp(FOM,vac_sol_2,D,f_comp_vac_2);
 
 %% sequential VAC
