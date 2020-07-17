@@ -108,12 +108,16 @@ POD.Jnz.plotSummary(f_rom_2_j,'layout','built-in');
 plotComp(FOM,ROM_2,D,f_comp_2);
 %% VAC
 data_1 = train_1{1}.sol{1}.X;
-vac.X = VAC(data_1,POD.X.npc(),'init',data_1(:,1));
+x0 = data_1(:,1);
+vac.X = VAC(data_1,POD.X.npc());
 %% VAC test
-[vac_sol_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac);
+[vac_sol_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac,'train_mode',true);
 plotComp(FOM,vac_sol_1,D,f_comp_vac_1);
 %% VAC-II train
-train_2_vac = genRom2(param,vac);
+train_2_vac = cell(1);
+train_2_vac{1}.sol = cell(1);
+train_2_vac{1}.sol{1} = vac_sol_1;
+% train_2_vac = genRom2(param,vac);
 %% VAC-II train
 [vac] = truncRom2(vac,train_2_vac{iNx});
 [vac] = approxRom2(vac,train_2_vac{iNx});
