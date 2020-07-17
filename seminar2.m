@@ -17,6 +17,14 @@ f_rom_2_r.Name = 'PCA-II R';
 f_rom_2_j = figure;
 f_rom_2_j.WindowStyle = 'docked';
 f_rom_2_j.Name = 'PCA-II J';
+% VAC-II figure
+f_vac_2_r = figure;
+f_vac_2_r.WindowStyle = 'docked';
+f_vac_2_r.Name = 'VAC-II R';
+% VAC-II figure
+f_vac_2_j = figure;
+f_vac_2_j.WindowStyle = 'docked';
+f_vac_2_j.Name = 'VAC-II J';
 % ROM-I plot
 f_comp_1 = figure;
 f_comp_1.WindowStyle = 'docked';
@@ -90,20 +98,23 @@ vac.X = VAC(data_1,POD.X.npc());
 [vac_sol_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac);
 plotComp(FOM,vac_sol_1,D,f_comp_vac_1);
 %% train or load ROM-II data
-train_2 = train_1;...genRom2(param,train_1);
+train_2 = genRom2(param,vac);
+train_2_vac = genRom2(param,POD);
 
 %% ROM-II train
 [POD] = truncRom2(POD,train_2{iNx});
 [POD] = approxRom2(POD,train_2{iNx});
 POD.Rx.plotSummary(f_rom_2_r,'layout','built-in');
 POD.Jnz.plotSummary(f_rom_2_j,'layout','built-in');
-drawnow;
 %% ROM-II test
 [ROM_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',POD);
 plotComp(FOM,ROM_2,D,f_comp_2);
+%% VAC-II train
+[vac] = truncRom2(vac,train_2_vac{iNx});
+[vac] = approxRom2(vac,train_2_vac{iNx});
+vac.Rx.plotSummary(f_vac_2_r,'layout','built-in');
+vac.Jnz.plotSummary(f_vac_2_j,'layout','built-in');
 %% VAC-II test
-vac.Rx = POD.Rx;
-vac.Jnz = POD.Jnz;
 [vac_sol_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',vac,'adaptive_fom',1);
 plotComp(FOM,vac_sol_2,D,f_comp_vac_2);
 
