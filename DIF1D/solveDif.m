@@ -1,4 +1,4 @@
-function [sol] = solveDif(Nx,Nt,bc,D,varargin)
+function [sol] = solveDif(Nx,Nt,param,D,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     
@@ -12,7 +12,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     
     % Parameter save
     sol.D = D;
-    sol.bc = bc;
+    sol.bc = param.bc;
     
     %% ROM mode processing
     rom_stage = 0;
@@ -95,7 +95,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
         dt_max = dt;
     end
     %% initial condition
-    a = 1.0;
+    a = 1;
     p = 2;
     x0 = a * sin(p*2*pi*(1:Nx)'./Nx);
     X = [x0,x0];
@@ -112,7 +112,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     kmax = 8;
     kmin = 3;
     crit_conv = 1e-3;
-    conv_rel = false;
+    conv_rel = true;
     
     %% dataset initialization
     sol.t = zeros(1,round(1/dt_min)+1);
@@ -172,15 +172,19 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             % Residual
             
             t_res_build = tic;
-            [Rt,W] = buildResidual(X,dt,D,bc,PODr);
+            [Rt,W] = buildResidual(X,dt,D,param.bc,PODr);
             t_res_build = toc(t_res_build);
             sol.timelog.resbld = sol.timelog.resbld + t_res_build;
             Rx = W(2:Nx+1)-W(1:Nx);
             R = Rt + Rx;
+            % source term
+            Rs = param.q;
+            R = R + Rs;
+            
             
             % Jacobian
             t_jac_build = tic;
-            [Jt,Jf] = buildFlow(X,dt,D,bc,PODj);
+            [Jt,Jf] = buildFlow(X,dt,D,param.bc,PODj);
             t_jac_build = toc(t_jac_build);
             sol.timelog.jacbld = sol.timelog.jacbld + t_jac_build;
             [Jx] = buildJacobian(Jf,Nx);
