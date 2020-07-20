@@ -43,7 +43,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
         end
     end
-    is_step_fom = false;
+    is_step_fom = true;
     %% stage name
     switch rom_stage
         case 0
@@ -108,12 +108,13 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
     % space discretization
     D = D*Nx^2;
     
-    % convergence parameters
-    kmax = 12;
-    kmin = 4;
+    %% convergence parameters
+    kmax = 8;
+    kmin = 3;
     crit_conv = 1e-3;
+    conv_rel = false;
     
-    % dataset initialization
+    %% dataset initialization
     sol.t = zeros(1,round(1/dt_min)+1);
     sol.X = zeros(Nx,round(1/dt_min)+1);
     if is_encoded
@@ -204,11 +205,15 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             R = J'*R;
             J = J' * J;
             delta = norm(R);
-            %             delta = norm(R);
+
             if k == 1
                 R0 = delta;
             end
-            is_converged = delta <= crit_conv*R0;
+            if conv_rel
+                is_converged = delta <= crit_conv*R0;
+            else
+                is_converged = delta * dt <= crit_conv;
+            end
             
             if is_converged
                 sol.timelog.kn(nstep) = k;
@@ -264,13 +269,13 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
         if and(~is_converged,k >= kmax)
             if adaptive_fom
                 if (~is_step_fom)
-                   is_step_fom = true;
-                   continue;
+                    is_step_fom = true;
+                    continue;
                 end
             end
             if (dt < dt_min)
                 warning(['Not converged',newline(),...
-                'Relative residual: ', num2str(delta/R0)]);
+                    'Relative residual: ', num2str(delta/R0)]);
                 break;
             end
             dt = dt/4;
