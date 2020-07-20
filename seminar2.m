@@ -51,13 +51,13 @@ vals = [];
 % drawnow;
 
 %% set other parmeters for dataset
-NxMin = 1000;
+NxMin = 2000;
 NxMax = NxMin;
 NxCount = 1;
 param.grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 param.Nt = 200;
 param.D.A = 0.9;
-param.D.P = 1;
+param.D.P = 3;
 param.D.S = 0.5e-1;
 param.bc.first = false;
 param.vals = vals;
@@ -67,17 +67,23 @@ param.vals = vals;
 iNx = NxCount;
 Nx = param.grids(iNx);
 % BC kind
-kind = 1;
-% set boundary condition
+kind = 2;
+%% set diffusion
+D = setDiff(Nx,param.D);
+%% set boundary condition
 bc = setBC(kind,pMax);
+bc.val(:) = 0;
 vals = bc.val;
 param.vals = vals;
 param.bc = bc;
-% set diffusion
-D = setDiff(Nx,param.D);
+
+%% set source term
+param.q = spalloc(Nx,1,1);
+i_q = round(0.5*Nx);
+param.q(i_q) = -1e+3;
 %%
 % solve FOM
-[FOM] = solveDif(Nx,param.Nt,bc,D);
+[FOM] = solveDif(Nx,param.Nt,param,D);
 plotSol(FOM,fFOM);
 
 %% train or load ROM-I data
@@ -91,7 +97,7 @@ train_1{1}.sol{1}.X = FOM.X;
 POD.X.plotSummary(f_rom_1,'layout','built-in'); drawnow;
                                     
 %% ROM-I test
-[ROM_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',POD,'train_mode',true);
+[ROM_1] = solveDif(Nx,param.Nt,param,D,'rom_stage',1,'encoder',POD,'train_mode',true);
 plotComp(FOM,ROM_1,D,f_comp_1);
 %% train or load ROM-II data
 train_2 = cell(1);
@@ -104,14 +110,14 @@ train_2{1}.sol{1} = ROM_1;
 POD.Rx.plotSummary(f_rom_2_r,'layout','built-in');
 POD.Jnz.plotSummary(f_rom_2_j,'layout','built-in');
 %% ROM-II test
-[ROM_2] = solveDif(Nx,param.Nt,bc,D,'rom_stage',2,'encoder',POD);
+[ROM_2] = solveDif(Nx,param.Nt,param,D,'rom_stage',2,'encoder',POD);
 plotComp(FOM,ROM_2,D,f_comp_2);
 %% VAC
 data_1 = train_1{1}.sol{1}.X;
 x0 = data_1(:,1);
 vac.X = VAC(data_1,POD.X.npc());
 %% VAC test
-[vac_sol_1] = solveDif(Nx,param.Nt,bc,D,'rom_stage',1,'encoder',vac,'train_mode',true);
+[vac_sol_1] = solveDif(Nx,param.Nt,param,D,'rom_stage',1,'encoder',vac,'train_mode',true);
 plotComp(FOM,vac_sol_1,D,f_comp_vac_1);
 %% VAC-II train
 train_2_vac = cell(1);
