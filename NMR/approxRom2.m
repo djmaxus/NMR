@@ -9,15 +9,15 @@ function [POD] = approxRom2(POD,train,varargin)
     end
     add_frac = 1.0;
     %% Res POD + greedy
-    nR = round(size(R,1)*0.1);
+    nR = round(size(R,1)*0.01);
     nR = max(nR,POD.Rx.npc());
-    nR = round(POD.Rx.npc()*(1+add_frac));
+%     nR = round(POD.Rx.npc()*(1+add_frac));
     [~,mask_R] = greedy(POD.Rx.u(:,1:POD.Rx.npc()),nR);
     
     %% Jac POD + greedy
-    nJ = round(size(J,1)*0.1);
+    nJ = round(size(J,1)*0.01);
     nJ = max(nJ,POD.Jnz.npc());
-    nJ = round(POD.Jnz.npc()*(1+add_frac));
+%     nJ = round(POD.Jnz.npc()*(1+add_frac));
     [~,mask_J] = greedy(POD.Jnz.u(:,1:POD.Jnz.npc()),nJ);
     
     %% Common mask
