@@ -193,8 +193,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 sol.Jnz = [sol.Jnz,Jf.*[1,-1]];
             end
             
+            % Decoder Jacobian
             if and(is_encoded,~is_step_fom)
-                % POD derivative
                 t_projection = tic;
                 J = J * POD.X.JD(Y(:,2));
                 t_projection = toc(t_projection);
@@ -202,9 +202,7 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
             end
             
             % convergence
-            R = J'*R;
-            J = J' * J;
-            delta = norm(R);
+            delta = norm(J'*R);
 
             if k == 1
                 R0 = delta;
@@ -240,6 +238,8 @@ function [sol] = solveDif(Nx,Nt,bc,D,varargin)
                 break;
             end
             
+            R = J'*R;
+            J = J' * J;
             % linsolve
             t_lin_solve = tic;
             dX = (J) \ (-R);
