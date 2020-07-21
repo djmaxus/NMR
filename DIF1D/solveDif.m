@@ -1,4 +1,4 @@
-function [sol] = solveDif(Nx,Nt,param,D,varargin)
+function [sol] = solveDif(Nx,Nt,param,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     
@@ -11,7 +11,7 @@ function [sol] = solveDif(Nx,Nt,param,D,varargin)
     sol.timelog.kn = zeros(1,Nt);
     
     % Parameter save
-    sol.D = D;
+    sol.D = param.D;
     sol.bc = param.bc;
     
     %% ROM mode processing
@@ -95,9 +95,7 @@ function [sol] = solveDif(Nx,Nt,param,D,varargin)
         dt_max = dt;
     end
     %% initial condition
-    a = 1;
-    p = 2;
-    x0 = a * sin(p*2*pi*(1:Nx)'./Nx);
+    x0 = param.x0;
     X = [x0,x0];
     if is_encoded
         Y = POD.X.encode(X);
@@ -106,13 +104,13 @@ function [sol] = solveDif(Nx,Nt,param,D,varargin)
     % paramter distribution
     
     % space discretization
-    D = D*Nx^2;
+    D = param.D*Nx^2;
     
     %% convergence parameters
     kmax = 8;
     kmin = 3;
-    crit_conv = 1e-3;
-    conv_rel = true;
+    crit_rel = 1e-5;
+    crit_abs = 1e-7;
     
     %% dataset initialization
     sol.t = zeros(1,round(1/dt_min)+1);
@@ -211,10 +209,12 @@ function [sol] = solveDif(Nx,Nt,param,D,varargin)
             if k == 1
                 R0 = delta;
             end
-            if conv_rel
-                is_converged = delta <= crit_conv*R0;
+            is_converged_abs = delta <= crit_abs;
+            is_converged_rel = delta <= crit_rel * R0;
+            if is_converged_abs
+                is_converged = is_converged_abs;
             else
-                is_converged = delta * dt <= crit_conv;
+                is_converged = is_converged_rel;
             end
             
             if is_converged
