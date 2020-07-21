@@ -3,9 +3,9 @@ function [param] = setProblem(Nx,bc,q,D,x0)
     param.bc.first = bc.isKindI(bc.kind);
     param.bc.val = [0,0];
     %% source terms
-    param.q = spalloc(Nx,1,1);
-    q.pos = round(q.pos*Nx);
-    param.q(q.pos) = q.val;
+    param.q.val = spalloc(Nx,1,1);
+    param.q.pos = round(q.pos*Nx);
+    param.q.val(param.q.pos) = q.val;
     %% diffusion
     param.D = setDiff(Nx,D);
     %% initial condition
