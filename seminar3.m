@@ -50,6 +50,12 @@ drawnow;
 %% remap ROM-I
 [remap.ROM_1] = solveDif(Nx,Nt,test.param,'rom_stage',1,'encoder',remap.pod,'train_mode',true);
 plotComp(test.FOM,remap.ROM_1,test.param.D,f.remap.ROM_1);
+%%
+remap.FOM_trunc = test.FOM;
+remap.FOM_trunc.X = remap.pod.X.truncate(test.FOM.X);
+test.FOM_trunc = test.FOM;
+test.FOM_trunc.X = test.pod.X.truncate(test.FOM.X);
+plotComp(test.FOM_trunc,remap.FOM_trunc,test.param.D,f.remap.FOM);
 %% functions
 function [data] = trainTestSim(Nx,Nt,param,fig)
     data.param = param;
