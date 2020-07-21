@@ -43,7 +43,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             end
         end
     end
-    is_step_fom = true;
+    is_step_fom = false;
     %% stage name
     switch rom_stage
         case 0
@@ -176,7 +176,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             Rx = W(2:Nx+1)-W(1:Nx);
             R = Rt + Rx;
             % source term
-            Rs = param.q;
+            Rs = param.q.val;
             R = R + Rs;
             
             
@@ -209,7 +209,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             if k == 1
                 R0 = delta;
             end
-            is_converged_abs = delta <= crit_abs;
+            is_converged_abs = delta*dt <= crit_abs;
             is_converged_rel = delta <= crit_rel * R0;
             if is_converged_abs
                 is_converged = is_converged_abs;
