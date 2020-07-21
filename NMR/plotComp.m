@@ -62,8 +62,6 @@ function [] = plotComp(sol_1,sol_2,D,fig)
            'BLD = ',num2str(spd.bld),newline(),...
            'ITR = ',num2str(spd.iter)];
     disp(['----',fig.Name,newline(),sms,newline(),'----']);
-%     fig.Name = sms;
-    drawnow;
     figure(fig);
 end
 
