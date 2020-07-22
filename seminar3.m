@@ -102,4 +102,21 @@ function y = linearRemapper(x,lim,r0,r1)
         error('Out of bounds')
     end
 end
+function y = polynomialRemapper(x,lim,r0,r1,n)
+    if x < lim(1)
+        error('Out of bounds');
+    elseif x == lim(1)
+        y = lim(1);
+    elseif x < r1
+        y = r0*((x - lim(1))/r1)^n + lim(1);
+    elseif x == r1
+        y = r0;
+    elseif x < lim(2)
+        y = (lim(2) - r0)* ((x - r1)/(lim(2) - r1))^n + r0;
+    elseif x == lim(2)
+        y = lim(2);
+    else
+        error('Out of bounds')
+    end
+end
 
