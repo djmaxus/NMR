@@ -30,8 +30,12 @@ plotComp(test.FOM,train.FOM,test.param.D,f.comp);
 %% arrange remapper
 remapper = @(x)(polynomialRemapper(x,[1,Nx],train.param.q.pos,test.param.q.pos,1.0));
 x = 1:Nx;
-y = (x-train.param.q.pos).^2';
+y = -(abs(x-train.param.q.pos))';
 y_remap = arrayRemapper(y,remapper);
+clf(f.remap.demo);
+ax = axes(f.remap.demo);
+plot(ax,x,[y,y_remap]);
+figure(f.remap.demo);
 %% apply remapper
 X = train.FOM.X;
 Xr = zeros(size(X));
