@@ -28,7 +28,7 @@ test.param = setProblem(Nx,bc,q_test,D,x0);
 %% sompare train and test
 plotComp(test.FOM,train.FOM,test.param.D,f.comp);
 %% arrange remapper
-remapper = @(x)(linearRemapper(x,[1,Nx],train.param.q.pos,test.param.q.pos));
+remapper = @(x)(polynomialRemapper(x,[1,Nx],train.param.q.pos,test.param.q.pos,1.0));
 x = 1:Nx;
 y = (x-train.param.q.pos).^2';
 y_remap = arrayRemapper(y,remapper);
