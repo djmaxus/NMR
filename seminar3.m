@@ -1,6 +1,6 @@
+startup;
 %%
 clc;
-startup;
 disp('seminar3 started');
 %% definitions
 definitions;
@@ -11,6 +11,7 @@ f.comp = new_figure('Train/Test comparison');
 f.train = trainTestPlots('train',new_figure);
 f.test = trainTestPlots('test',new_figure);
 f.remap = trainTestPlots('remap',new_figure);
+f.remap.demo = new_figure('Remap Demo');
 %% problem setup
 Nx = 2000;
 Nt = 100;
@@ -22,13 +23,13 @@ q_train = q_init(0.5,-1e+3);
 train.param = setProblem(Nx,bc,q_train,D,x0);
 [train] = trainTestSim(Nx,Nt,train.param,f.train);
 %% test source term
-q_test = q_init(0.49,-1e+3);
+q_test = q_init(0.6,-1e+3);
 test.param = setProblem(Nx,bc,q_test,D,x0);
 [test] = trainTestSim(Nx,Nt,test.param,f.test);
 %% sompare train and test
 plotComp(test.FOM,train.FOM,test.param.D,f.comp);
 %% arrange remapper
-remapper = @(x)(polynomialRemapper(x,[1,Nx],train.param.q.pos,test.param.q.pos,1.0));
+remapper = @(x)(polynomialRemapper(x,[1,Nx],train.param.q.pos,test.param.q.pos,1.2));
 x = 1:Nx;
 y = -(abs(x-train.param.q.pos))';
 y_remap = arrayRemapper(y,remapper);
@@ -47,7 +48,7 @@ remap.FOM.X = Xr;
 plotComp(test.FOM,remap.FOM,test.param.D,f.remap.FOM);
 %% remap PCA
 remap.pod.X = PCA(remap.FOM.X,0.99,'init',remap.FOM.X(:,1),'sval_deg',1);
-npc_remap = round(test.pod.X.npc()*3);
+npc_remap = round(test.pod.X.npc());
 remap.pod.X = remap.pod.X.setNPC(npc_remap);
 remap.pod.X.plotSummary(f.remap.POD,'data',test.FOM.X);
 drawnow;
@@ -89,23 +90,6 @@ function Y = arrayRemapper(X,remapper)
         Y(i,:) = X(j,:);
     end
 end
-function y = linearRemapper(x,lim,r0,r1)
-    if x < lim(1)
-        error('Out of bounds');
-    elseif x == lim(1)
-        y = lim(1);
-    elseif x < r1
-        y = r0/r1*(x - lim(1)) + lim(1);
-    elseif x == r1
-        y = r0;
-    elseif x < lim(2)
-        y = (lim(2) - r0)/(lim(2) - r1) * (x - r1) + r0;
-    elseif x == lim(2)
-        y = lim(2);
-    else
-        error('Out of bounds')
-    end
-end
 function y = polynomialRemapper(x,lim,r0,r1,n)
     if x < lim(1)
         error('Out of bounds');
@@ -116,7 +100,7 @@ function y = polynomialRemapper(x,lim,r0,r1,n)
     elseif x == r1
         y = r0;
     elseif x < lim(2)
-        y = (lim(2) - r0)* ((x - r1)/(lim(2) - r1))^n + r0;
+        y = (lim(2) - r0)* ((x - r1)/(lim(2) - r1))^(n) + r0;
     elseif x == lim(2)
         y = lim(2);
     else
