@@ -19,7 +19,7 @@ function [] = plotComp(sol_1,sol_2,D,fig)
     %% error
     x_rom = interp1(ROM.t,ROM.X',FOM.t)';
     enum = (x_rom - FOM.X);
-    res = enum;
+    res = abs(enum);
     
     sp3 = subplot(2,3,3,axes(fig));
     Nx = size(FOM.X,1);
@@ -27,7 +27,7 @@ function [] = plotComp(sol_1,sol_2,D,fig)
     xlim(sp3,[0 1]);
     ylim(sp3,[0 1]);
     colorbar(sp3);
-    colormap(sp3,'gray');
+    colormap(sp3,'jet');
     title(sp3,'$\Delta ROM$','interpreter','latex');
     xlabel(sp3,'t');
     ylabel(sp3,'x');
