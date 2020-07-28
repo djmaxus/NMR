@@ -22,7 +22,7 @@ q_train = q_init(0.5,-1e+3);
 train.param = setProblem(Nx,bc,q_train,D,x0);
 [train] = trainTestSim(Nx,Nt,train.param,f.train);
 %% test source term
-q_test = q_init(0.6,-1e+3);
+q_test = q_init(0.51,-1e+3);
 test.param = setProblem(Nx,bc,q_test,D,x0);
 [test] = trainTestSim(Nx,Nt,test.param,f.test);
 %% sompare train and test
