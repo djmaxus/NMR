@@ -42,16 +42,18 @@ y(4,:) = 0;
 dg_spline = spline(x,y',1:Nx)';
 dg_lin = zeros(size(g0));
 for i = 1:x0
-    dg_lin(i,:) = dg0./(x0-1) * (i - 1); 
+    dg_lin(i,:) = dg0 .* ((i - 1)/(x0-1))^1; 
 end
+x_mid = round(0.5*(x0+x1));
 for i = x0:x1
-    dg_lin(i,:) = (dg1 - dg0)./(x1-x0) * (i - x0) + dg0; 
+    dg_lin(i,:) = (dg1 - 0).* ((i - x_mid)/(x1-x_mid))^(1) + 0; 
 end
 for i = x1:Nx
-    dg_lin(i,:) = (0 - dg1)./(Nx-x1) * (i - x1) + dg1; 
+    dg_lin(i,:) = (dg1 - 0).* ((i - Nx)/(x1 - Nx))^1 + 0; 
 end
 alpha = 1.0;
 dg = alpha * dg_lin + (1- alpha)*dg_spline;
+time_mult = exp(-(1:Nt+1));
 g1 = g0 + dg*(x1-x0);
 dX = test.FOM.X - train.FOM.X;
 %% remap PCA
