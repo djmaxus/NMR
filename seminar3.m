@@ -11,6 +11,8 @@ f.comp = new_figure('Train/Test comparison');
 f.train = trainTestPlots('train',new_figure);
 f.test = trainTestPlots('test',new_figure);
 f.remap = trainTestPlots('remap',new_figure);
+f.green.dX = new_figure('Green difference');
+f.green.slice = new_figure('Green diff slices');
 %% problem setup
 Nx = 2000;
 Nt = 100;
@@ -22,7 +24,7 @@ q_train = q_init(0.5,-1e+3);
 train.param = setProblem(Nx,bc,q_train,D,x0);
 [train] = trainTestSim(Nx,Nt,train.param,f.train);
 %% test source term
-q_test = q_init(0.51,-1e+3);
+q_test = q_init(0.6,-1e+3);
 test.param = setProblem(Nx,bc,q_test,D,x0);
 [test] = trainTestSim(Nx,Nt,test.param,f.test);
 %% sompare train and test
@@ -33,29 +35,52 @@ x1 =  test.param.q.pos;
 g0 = train.FOM.X;
 dg0 = (g0(x1,:) - g0(x0,:))/(x1-x0);
 dg1 = -dg0;
-x = [1,x0,x1,Nx];
-y = zeros(4,Nt+1);
-y(1,:) = 0;
-y(2,:) = dg0;
-y(3,:) = dg1;
-y(4,:) = 0;
-dg_spline = spline(x,y',1:Nx)';
+x = [0,x0,x1,Nx];
+y = [zeros(1,Nt+1);dg0;dg1;zeros(1,Nt+1)];
+z = interp1(x,y,1:Nx,'linear');
+
 dg_lin = zeros(size(g0));
-for i = 1:x0
-    dg_lin(i,:) = dg0 .* ((i - 1)/(x0-1))^1; 
+d2g = (g0(x1+1,:) - g0(x1-1,:))/2;
+d2g = (d2g - dg0)/(x1-x0);
+a = [dg0;dg0];
+b = [d2g;d2g];
+for i = 1:10
+    b(2,:) = d2g./(dg0 + a(1,:));b(2,1) = 0;
+    a(2,:) = dg0./(exp(b(1,:)*x0)-1);a(2,1) = 0;
+    a(1,:) = a(2,:);
+    b(1,:) = b(2,:);
 end
-x_mid = round(0.5*(x0+x1));
-for i = x0:x1
-    dg_lin(i,:) = (dg1 - 0).* ((i - x_mid)/(x1-x_mid))^(1) + 0; 
-end
-for i = x1:Nx
-    dg_lin(i,:) = (dg1 - 0).* ((i - Nx)/(x1 - Nx))^1 + 0; 
-end
-alpha = 1.0;
-dg = alpha * dg_lin + (1- alpha)*dg_spline;
-time_mult = exp(-(1:Nt+1));
+dg = z;
 g1 = g0 + dg*(x1-x0);
 dX = test.FOM.X - train.FOM.X;
+%% plot differences
+clf(f.green.dX);
+ax.green.dX = subplot(1,3,1,axes(f.green.dX));
+ax.green.mismatch = subplot(1,3,2,axes(f.green.dX));
+ax.green.dg = subplot(1,3,3,axes(f.green.dX));
+imagesc(ax.green.dX,dX); colorbar(ax.green.dX);
+imagesc(ax.green.mismatch,dg*(x1-x0)); colorbar(ax.green.mismatch);
+imagesc(ax.green.dg,g1); colorbar(ax.green.dg);
+figure(f.green.dX);
+%% plot slices
+clf(f.green.slice);
+n = 2;
+ax.green.slice = subplot(1,2,1,axes(f.green.slice));
+ax.green.sol = subplot(1,2,2,axes(f.green.slice));
+
+plot(ax.green.slice,dX(:,n));
+hold(ax.green.slice,'on');
+plot(ax.green.slice,dg(:,n)*(x1-x0));
+hold(ax.green.slice,'off');
+
+plot(ax.green.sol,test.FOM.X(:,n));
+hold(ax.green.sol,'on');
+plot(ax.green.sol,train.FOM.X(:,n));
+hold(ax.green.sol,'on');
+plot(ax.green.sol,g1(:,n));
+hold(ax.green.sol,'off');
+
+figure(f.green.slice);
 %% remap PCA
 remap.FOM.X = g1;
 remap.pod.X = PCA(remap.FOM.X,0.99,'init',remap.FOM.X(:,1),'sval_deg',1);
