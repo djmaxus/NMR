@@ -35,23 +35,15 @@ x1 =  test.param.q.pos;
 g0 = train.FOM.X;
 dg0 = (g0(x1,:) - g0(x0,:))/(x1-x0);
 dg1 = -dg0;
-x = [0,x0,x1,Nx];
-y = [zeros(1,Nt+1);dg0;dg1;zeros(1,Nt+1)];
-z = interp1(x,y,1:Nx,'linear');
-
-dg_lin = zeros(size(g0));
-d2g = (g0(x1+1,:) - g0(x1-1,:))/2;
-d2g = (d2g - dg0)/(x1-x0);
-a = [dg0;dg0];
-b = [d2g;d2g];
-for i = 1:10
-    b(2,:) = d2g./(dg0 + a(1,:));b(2,1) = 0;
-    a(2,:) = dg0./(exp(b(1,:)*x0)-1);a(2,1) = 0;
-    a(1,:) = a(2,:);
-    b(1,:) = b(2,:);
-end
-dg = z;
+x = [1,x0,x1,Nx];
+dy = [zeros(1,Nt+1);dg0;dg1;zeros(1,Nt+1)];
+dg = interp1(x,dy,1:Nx,'linear');
 g1 = g0 + dg*(x1-x0);
+y = g1(x,:);
+z = interp1(x,y,1:Nx,'linear');
+dz = (z - g0)./(x1-x0);
+alpha = 1;
+g1 = g0 + (alpha * dg + (1-alpha)*dz)*(x1-x0);
 dX = test.FOM.X - train.FOM.X;
 %% plot differences
 clf(f.green.dX);
@@ -71,6 +63,8 @@ ax.green.sol = subplot(1,2,2,axes(f.green.slice));
 plot(ax.green.slice,dX(:,n));
 hold(ax.green.slice,'on');
 plot(ax.green.slice,dg(:,n)*(x1-x0));
+hold(ax.green.slice,'on');
+scatter(ax.green.slice,x',dg(x,n)*(x1-x0));
 hold(ax.green.slice,'off');
 
 plot(ax.green.sol,test.FOM.X(:,n));
@@ -78,9 +72,17 @@ hold(ax.green.sol,'on');
 plot(ax.green.sol,train.FOM.X(:,n));
 hold(ax.green.sol,'on');
 plot(ax.green.sol,g1(:,n));
+hold(ax.green.slice,'on');
+scatter(ax.green.sol,x',g1(x,n));
 hold(ax.green.sol,'off');
 
 figure(f.green.slice);
+%% continuity
+dg0_left = g0(x0,:) - g0(x0-1,:);
+dg0_right = g0(x0+1,:) - g0(x0,:);
+dg_right = dg(x0+1,:) - dg(x0,:);
+dg_left = dg_right + (dg0_right-dg0_left)./(x1-x0);
+x0_left = x0-1;
 %% remap PCA
 remap.FOM.X = g1;
 remap.pod.X = PCA(remap.FOM.X,0.99,'init',remap.FOM.X(:,1),'sval_deg',1);
