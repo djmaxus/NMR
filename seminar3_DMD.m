@@ -32,27 +32,32 @@ dt = 1/Nt;
 Q = param.q.val*dt;
 X1 = FOM.X(:,2:end-1);
 X2 = FOM.X(:,3:end);
-[U,S,V] = svds(X1,10);
-X1_inv = V * diag(diag(S).^(-1)) * U';
-A = (X2)*X1_inv;
-X2_DMD = A*(X1);
+
+A = (X1 + Q)*inv_svd(X2);
+A = A - speye(size(A,1));
+A = A./ dt;
+%%
+
+X2_DMD = A*(X1 + Q);
 FOM_DMD = FOM;
-FOM_DMD.X(:,3:end) = X2_DMD;
+FOM_DMD.X(:,2:end) = X2_DMD;
 plotSol(FOM_DMD,f.DMD); drawnow;
 plotComp(FOM,FOM_DMD,param.D,f.Compare);
 %%
 [Wf,Sf] = eigs(A,10);
 %% Apply Evolution
 FOM_Evo = FOM;
-x = FOM.X(:,2);
-for i = 3:size(FOM.X,2)
-    x = A*(x);
+x = FOM.X(:,1);
+for i = 2:size(FOM.X,2)
+    x = A*(x + Q);
     FOM_Evo.X(:,i) = x;
 end
 plotSol(FOM_Evo,f.Evo); drawnow;
 plotComp(FOM,FOM_Evo,param.D,f.Compare);
 %% from databook.com
 [Phi,Lambda,b] = DMD(X1,X2,10);
+%% system with separated actuation
+
 %%
 q_test = q_init(0.6,-1e+3);
 test.param = setProblem(Nx,bc,q_test,D,x0);
