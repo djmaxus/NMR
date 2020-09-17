@@ -8,14 +8,10 @@ disp('definitions set');
 %% plots
 close all;
 f.FOM = new_figure('FOM');
+f.PCA = new_figure('PCA');
+f.ROM = new_figure('ROM');
 f.DMD = new_figure('DMD');
-f.Evo = new_figure('DMD Evo');
-f.Compare = new_figure('Comparison');
-% f.train = trainTestPlots('train',new_figure);
-% f.test = trainTestPlots('test',new_figure);
-% f.remap = trainTestPlots('remap',new_figure);
-% f.green.dX = new_figure('Green difference');
-% f.green.slice = new_figure('Green diff slices');
+f.DMDc = new_figure('DMDc');
 %% problem setup
 Nx = 2000;
 Nt = 100;
@@ -27,139 +23,64 @@ source_term = q_init(0.5,-1e+3);
 param = setProblem(Nx,bc,source_term,D,x0);
 FOM = solveDif(Nx,Nt,param);
 plotSol(FOM,f.FOM); drawnow;
-%% perform Full DMD
+%% PCA
+X = FOM.X;
+pca.X = PCA(FOM.X,10,'init', zeros(size(X,1),1),'sval_deg',1);
+pca.X.plotSummary(f.PCA);
+%% ROM_I
+ROM = solveDif(Nx,Nt,param,'rom_stage',1,'encoder',pca);
+plotComp(FOM,ROM,param.D,f.ROM);
+%% explore source term decompostion
 dt = 1/Nt;
 Q = param.q.val*dt;
+clf(f.test);
+plot(axes(f.test),pca.X.truncate(Q)); figure(f.test);
+%% perform DMD in encoded space
+
 X1 = FOM.X(:,2:end-1);
 X2 = FOM.X(:,3:end);
+Y1 = pca.X.encode(X1);
+Y2 = pca.X.encode(X2);
+Qy = pca.X.encode(Q);
 
-A = (X1 + Q)*inv_svd(X2);
-A = A - speye(size(A,1));
-A = A./ dt;
-%%
-
-X2_DMD = A*(X1 + Q);
-FOM_DMD = FOM;
-FOM_DMD.X(:,2:end) = X2_DMD;
-plotSol(FOM_DMD,f.DMD); drawnow;
-plotComp(FOM,FOM_DMD,param.D,f.Compare);
-%%
-[Wf,Sf] = eigs(A,10);
-%% Apply Evolution
-FOM_Evo = FOM;
-x = FOM.X(:,1);
-for i = 2:size(FOM.X,2)
-    x = A*(x + Q);
-    FOM_Evo.X(:,i) = x;
+A = X2 * pinv(X1,pca.X.npc());
+B = Y2 * pinv(Y1,pca.X.npc());
+DMD = FOM;
+x = DMD.X(:,2);
+y = pca.X.encode(x);
+tic;
+for i = 3:size(DMD.X,2)
+    % advance 1 step
+    x = A*x;
+    y = B * y;
+    % decode
+    xx = pca.X.decode(y);
+    % write down
+    DMD.X(:,i) = xx;
 end
-plotSol(FOM_Evo,f.Evo); drawnow;
-plotComp(FOM,FOM_Evo,param.D,f.Compare);
+toc;
+plotComp(FOM,DMD,param.D,f.DMD);
+%% DMDc with unknown actuation matrix B
+approx = @(X)(svd(X,'econ'));
+Omega = [X1;full(Q).*ones(size(X1))];
+[Uo,So,Vo] = approx(Omega);
+So = diag(So);
+Uo1 = Uo(1:2000,:);
+Uo2 = Uo(2001:end,:);
+[U2,S2,V2] = approx(X2);
+S2 = diag(S2);
+A = X2 * Vo * diag(So.^(-1))*Uo1';
+B = X2 * Vo * diag(So.^(-1))*Uo2';
+DMDc = FOM;
+DMDc.X(:,3:end) = A*X1 + B*Q;
+plotComp(FOM,DMDc,param.D,f.DMDc);
+%% eDMD
 %% from databook.com
 [Phi,Lambda,b] = DMD(X1,X2,10);
-%% system with separated actuation
 
-%%
-q_test = q_init(0.6,-1e+3);
-test.param = setProblem(Nx,bc,q_test,D,x0);
-Q1 = test.param.q.val;
-test.FOM = solveDif(Nx,Nt,test.param);
-plotSol(test.FOM,f.FOM); drawnow;
-%% test source term
 
-[test] = trainTestSim(Nx,Nt,test.param,f.test);
-%% sompare train and test
-plotComp(test.FOM,train.FOM,test.param.D,f.comp);
-%% compute source positions
-x0 = train.param.q.pos;
-x1 =  test.param.q.pos;
-g0 = train.FOM.X;
-dg0 = (g0(x1,:) - g0(x0,:))/(x1-x0);
-dg1 = -dg0;
-x = [1,x0,x1,Nx];
-dy = [zeros(1,Nt+1);dg0;dg1;zeros(1,Nt+1)];
-dg = interp1(x,dy,1:Nx,'linear');
-g1 = g0 + dg*(x1-x0);
-y = g1(x,:);
-z = interp1(x,y,1:Nx,'linear');
-dz = (z - g0)./(x1-x0);
-alpha = 1;
-g1 = g0 + (alpha * dg + (1-alpha)*dz)*(x1-x0);
-dX = test.FOM.X - train.FOM.X;
 
-    
-%% plot differences
-clf(f.green.dX);
-ax.green.dX = subplot(1,3,1,axes(f.green.dX));
-ax.green.mismatch = subplot(1,3,2,axes(f.green.dX));
-ax.green.dg = subplot(1,3,3,axes(f.green.dX));
-imagesc(ax.green.dX,dX); colorbar(ax.green.dX);
-imagesc(ax.green.mismatch,dg*(x1-x0)); colorbar(ax.green.mismatch);
-imagesc(ax.green.dg,g1); colorbar(ax.green.dg);
-figure(f.green.dX);
-%% plot slices
-clf(f.green.slice);
-n = 2;
-ax.green.slice = subplot(1,2,1,axes(f.green.slice));
-ax.green.sol = subplot(1,2,2,axes(f.green.slice));
 
-plot(ax.green.slice,dX(:,n));
-hold(ax.green.slice,'on');
-plot(ax.green.slice,dg(:,n)*(x1-x0));
-hold(ax.green.slice,'on');
-scatter(ax.green.slice,x',dg(x,n)*(x1-x0));
-hold(ax.green.slice,'off');
 
-plot(ax.green.sol,test.FOM.X(:,n));
-hold(ax.green.sol,'on');
-plot(ax.green.sol,train.FOM.X(:,n));
-hold(ax.green.sol,'on');
-plot(ax.green.sol,g1(:,n));
-hold(ax.green.slice,'on');
-scatter(ax.green.sol,x',g1(x,n));
-hold(ax.green.sol,'off');
-
-figure(f.green.slice);
-%% continuity
-dg0_left = g0(x0,:) - g0(x0-1,:);
-dg0_right = g0(x0+1,:) - g0(x0,:);
-dg_right = dg(x0+1,:) - dg(x0,:);
-dg_left = dg_right + (dg0_right-dg0_left)./(x1-x0);
-x0_left = x0-1;
-%% remap PCA
-remap.FOM.X = g1;
-remap.pod.X = PCA(remap.FOM.X,0.99,'init',remap.FOM.X(:,1),'sval_deg',1);
-remap.pod.X.plotSummary(f.remap.POD,'data',test.FOM.X);
-drawnow;
-%% remap ROM-I
-[remap.ROM_1] = solveDif(Nx,Nt,test.param,'rom_stage',1,'encoder',remap.pod,'train_mode',true);
-plotComp(test.FOM,remap.ROM_1,test.param.D,f.remap.ROM_1);
-%%
-remap.FOM_trunc = test.FOM;
-remap.FOM_trunc.X = remap.pod.X.truncate(test.FOM.X);
-test.FOM_trunc = test.FOM;
-test.FOM_trunc.X = test.pod.X.truncate(test.FOM.X);
-plotComp(test.FOM_trunc,remap.FOM_trunc,test.param.D,f.remap.FOM);
-%% functions
-function [data] = trainTestSim(Nx,Nt,param,fig)
-    data.param = param;
-    %% data FOM simulation
-    data.FOM = solveDif(Nx,Nt,data.param);
-    plotSol(data.FOM,fig.FOM);
-    drawnow;
-    %% data PCA
-    data.pod.X = PCA(data.FOM.X,0.99,'init',data.FOM.X(:,1),'sval_deg',1);
-    data.pod.X.plotSummary(fig.POD);
-    drawnow;
-    %% data ROM-I
-    [data.ROM_1] = solveDif(Nx,Nt,data.param,'rom_stage',1,'encoder',data.pod,'train_mode',true);
-    plotComp(data.FOM,data.ROM_1,data.param.D,fig.ROM_1);
-end
-
-function [fig] = trainTestPlots(name,new_figure)
-    %% plots
-    fig.FOM = new_figure(['FOM ',name]);
-    fig.POD = new_figure(['PCA ',name]);
-    fig.ROM_1 = new_figure(['ROM-I ',name]);
-end
 
 
