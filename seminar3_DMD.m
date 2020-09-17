@@ -72,7 +72,15 @@ S2 = diag(S2);
 A = X2 * Vo * diag(So.^(-1))*Uo1';
 B = X2 * Vo * diag(So.^(-1))*Uo2';
 DMDc = FOM;
-DMDc.X(:,3:end) = A*X1 + B*Q;
+% DMDc.X(:,3:end) = A*X1 + B*Q;
+x = DMDc.X(:,2);
+tic;
+for i = 3:size(DMDc.X,2)
+    % advance 1 step
+    x = A*x + B * Q;
+    % write down
+    DMDc.X(:,i) = x;
+end
 plotComp(FOM,DMDc,param.D,f.DMDc);
 %% eDMD
 %% from databook.com
