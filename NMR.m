@@ -1,6 +1,4 @@
 
-% TODO: calculate X as supporting variable for ROM
-% TODO: extend mask properly
 addpath('./DIF1D');
 addpath('./POD');
 clc;
