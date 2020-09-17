@@ -18,6 +18,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
     rom_stage = 0;
     train_mode = false;
     adaptive_fom = false;
+    is_step_fom = false;
     POD = [];
     Ydd = [];
     if length(varargin) >= 2
@@ -37,13 +38,13 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             end
             if strcmp(varname,'adaptive_fom')
                 adaptive_fom = varargin{2};
+                is_step_fom = true;
             end
             for i = 1:2
                 varargin(1) = [];
             end
         end
-    end
-    is_step_fom = false;
+    end   
     %% stage name
     switch rom_stage
         case 0
