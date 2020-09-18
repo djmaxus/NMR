@@ -12,6 +12,7 @@ f.PCA = new_figure('PCA');
 f.ROM = new_figure('ROM');
 f.DMD = new_figure('DMD');
 f.DMDc = new_figure('DMDc');
+f.test = new_figure('test');
 %% problem setup
 Nx = 2000;
 Nt = 100;
@@ -25,7 +26,7 @@ FOM = solveDif(Nx,Nt,param);
 plotSol(FOM,f.FOM); drawnow;
 %% PCA
 X = FOM.X;
-pca.X = PCA(FOM.X,10,'init', zeros(size(X,1),1),'sval_deg',1);
+pca.X = PCA(FOM.X,0.99,'init', zeros(size(X,1),1),'sval_deg',1);
 pca.X.plotSummary(f.PCA);
 %% ROM_I
 ROM = solveDif(Nx,Nt,param,'rom_stage',1,'encoder',pca);
@@ -37,14 +38,14 @@ clf(f.test);
 plot(axes(f.test),pca.X.truncate(Q)); figure(f.test);
 %% perform DMD in encoded space
 
-X1 = FOM.X(:,2:end-1);
-X2 = FOM.X(:,3:end);
+X1 = FOM.X(:,1:end-1);
+X2 = FOM.X(:,2:end);
 Y1 = pca.X.encode(X1);
 Y2 = pca.X.encode(X2);
 Qy = pca.X.encode(Q);
 
 A = X2 * pinv(X1,pca.X.npc());
-B = Y2 * pinv(Y1,pca.X.npc());
+B = Y2 * pinv(Y1,50);
 DMD = FOM;
 x = DMD.X(:,2);
 y = pca.X.encode(x);
@@ -61,8 +62,9 @@ end
 toc;
 plotComp(FOM,DMD,param.D,f.DMD);
 %% DMDc with unknown actuation matrix B
-approx = @(X)(svd(X,'econ'));
-Omega = [X1;full(Q).*ones(size(X1))];
+approx = @(X)(svds(X,pca.X.npc()));
+C = full(Q).*ones(size(X1));
+Omega = [X1;C];
 [Uo,So,Vo] = approx(Omega);
 So = diag(So);
 Uo1 = Uo(1:2000,:);
@@ -81,10 +83,14 @@ for i = 3:size(DMDc.X,2)
     % write down
     DMDc.X(:,i) = x;
 end
+toc;
 plotComp(FOM,DMDc,param.D,f.DMDc);
+%%
+[Phi,Lambda] = eig(A);
+[PhiB,LambdaB] = eig(B);
 %% eDMD
 %% from databook.com
-[Phi,Lambda,b] = DMD(X1,X2,10);
+% [Phi,Lambda,b] = DMD(X1,X2,10);
 
 
 
