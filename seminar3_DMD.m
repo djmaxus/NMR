@@ -20,7 +20,7 @@ bc.kind = 1;
 D =  D_init(0.0,3,0.5e-1);
 x0 = setInit(Nx,0,0);
 %% FOM simulation
-source_term = q_init(0.5,-1e+3);
+source_term = q_init(0.6,-1e+3);
 param = setProblem(Nx,bc,source_term,D,x0);
 FOM = solveDif(Nx,Nt,param);
 plotSol(FOM,f.FOM); drawnow;
@@ -62,7 +62,7 @@ end
 toc;
 plotComp(FOM,DMD,param.D,f.DMD);
 %% DMDc with unknown actuation matrix B
-approx = @(X)(svds(X,pca.X.npc()));
+approx = @(X)(svd(X,'econ'));
 C = full(Q).*ones(size(X1));
 Omega = [X1;C];
 [Uo,So,Vo] = approx(Omega);
@@ -88,6 +88,10 @@ plotComp(FOM,DMDc,param.D,f.DMDc);
 %%
 [Phi,Lambda] = eig(A);
 [PhiB,LambdaB] = eig(B);
+%% plots
+clf(f.test);
+semilogx(axes(f.test),abs(Lambda(:)),'-');
+figure(f.test);
 %% eDMD
 %% from databook.com
 % [Phi,Lambda,b] = DMD(X1,X2,10);
