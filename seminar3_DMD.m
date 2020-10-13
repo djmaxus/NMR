@@ -17,6 +17,7 @@ f.test = new_figure('test');
 Nx = 2000;
 Nt = 100;
 bc.kind = 1;
+bc.val = [1,-1];
 D =  D_init(0.0,3,0.5e-1);
 x0 = setInit(Nx,0,0);
 %% FOM simulation
