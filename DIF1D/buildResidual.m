@@ -30,7 +30,8 @@ function [R] = calcFlux(X,D,bc,i)
             delta = [X( i ),X( i - 1)];
         end
         x = max(delta(2),delta(1));
-        R = -D( i ) * (x^2+1) * ( delta(1) - delta(2) );
+        mult = D.model(x);%(x^2+1);
+        R = -D.val( i ) * mult(1) * ( delta(1) - delta(2) );
     else
         if i==1
             R = bc.val(1);
@@ -38,7 +39,7 @@ function [R] = calcFlux(X,D,bc,i)
             R = bc.val(2);
         else
             x = max(X(i),X(i-1));
-            R = -D( i ) * (x^2+1) * ( X( i ) - X( i - 1 ) );
+            R = -D.val( i ) * (x^2+1) * ( X( i ) - X( i - 1 ) );
         end
     end
 end

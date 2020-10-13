@@ -7,7 +7,8 @@ function [param] = setProblem(Nx,bc,q,D,x0)
     param.q.pos = round(q.pos*Nx);
     param.q.val(param.q.pos) = q.val;
     %% diffusion
-    param.D = setDiff(Nx,D);
+    param.D.val = setDiff(Nx,D);
+    param.D.model = @(u)([max(u.^2,0),max(2*u,0)]);
     %% initial condition
     param.x0 = x0;
 end

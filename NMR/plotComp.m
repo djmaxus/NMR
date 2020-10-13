@@ -35,9 +35,9 @@ function [] = plotComp(sol_1,sol_2,D,fig)
     
     %% Diffusion
     sp4 = subplot(2,3,4,axes(fig));
-    plot(sp4,D(1:Nx),(1:Nx)./Nx);
+    plot(sp4,D.val(1:Nx),(1:Nx)./Nx);
     ylim(sp4,[0,1]);
-    xlim(sp4,[0,max(D)]);
+    xlim(sp4,[0,max(D.val)]);
     ylabel(sp4,'x');
     xlabel(sp4,'$D_0$','interpreter','latex');
     title(sp4,'Diffusion coefficient $D_0(x)$','interpreter','latex');

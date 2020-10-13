@@ -31,8 +31,9 @@ function [J] = calcFlux(X,D,bc,i,rj)
         end
         imax = 1+ ge(delta(2)-delta(1),0);
         x = delta(imax);
+        mult = D.model(x);%[x^2+1,2*x];
         for j = rj
-            x_dx = 2*x*eq(imax,j);
+            x_dx = mult(2)*eq(imax,j);
             d_dx = eq( j, 2 ) - eq( j, 1 );
             if i == 1
                 x_dx = x_dx * ne(imax,1);
@@ -41,14 +42,14 @@ function [J] = calcFlux(X,D,bc,i,rj)
                 x_dx = x_dx * ne(imax,N+1);
                 d_dx = d_dx * ne(j,2);
             end
-            J( j ) = -D( i ) * (x_dx * (delta( 2 ) - delta(1)) + (x^2+1) * d_dx);
+            J( j ) = -D.val( i ) * (x_dx * (delta( 2 ) - delta(1)) + mult(1) * d_dx);
         end
     else
         if and(i~=1,i~=N+1)
             x = max(X(i),X(i-1));
             imax = eq(x,X(i-1)) + eq(x,X(i))*2;
             for j=rj
-                J( j ) = -D( i ) * (2 * x * eq( imax, j ) * (X( i ) - X( i - 1 )) + (x^2+1) * (eq( j, 2 ) - eq( j, 1 )));
+                J( j ) = -D.val( i ) * (2 * x * eq( imax, j ) * (X( i ) - X( i - 1 )) + (x^2+1) * (eq( j, 2 ) - eq( j, 1 )));
             end
         end
     end

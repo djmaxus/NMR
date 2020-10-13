@@ -105,7 +105,8 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
     % paramter distribution
     
     % space discretization
-    D = param.D*Nx^2;
+    D.val = param.D.val*Nx^2;
+    D.model = param.D.model;
     
     %% convergence parameters
     kmax = 8;
