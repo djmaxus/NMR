@@ -19,7 +19,7 @@ Nt = 100;
 bc.kind = 1;
 bc.val = [1,-1];
 D =  D_init(0.0,3,0.5e-1);
-x0 = setInit(Nx,0,0);
+x0 = setInit(Nx,0,0,1);
 %% FOM simulation
 source_term = q_init(0.6,-1e+3);
 param = setProblem(Nx,bc,source_term,D,x0);
