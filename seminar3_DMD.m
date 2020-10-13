@@ -1,10 +1,6 @@
 startup;
-%%
 clc;
-disp('seminar3 started');
-%% definitions
 definitions;
-disp('definitions set');
 %% plots
 close all;
 f.FOM = new_figure('FOM');
@@ -16,12 +12,12 @@ f.test = new_figure('test');
 %% problem setup
 Nx = 2000;
 Nt = 100;
-bc.kind = 1;
-bc.val = [1,-1];
+bc.kind = 2;
+bc.val = [0,0];
 D =  D_init(0.0,3,0.5e-1);
 x0 = setInit(Nx,0,0,1);
 %% FOM simulation
-source_term = q_init(0.6,-1e+3);
+source_term = q_init(0.6,+1e+3);
 param = setProblem(Nx,bc,source_term,D,x0);
 FOM = solveDif(Nx,Nt,param,'train_mode',1);
 plotSol(FOM,f.FOM); drawnow;
@@ -66,7 +62,7 @@ end
 toc;
 plotComp(FOM,DMD,param.D,f.DMD);
 %% DMDc with unknown actuation matrix B
-approx = @(X)(svd(X,'econ'));
+approx = @(X)(svds(X,pca.X.npc()));
 C = full(Q).*ones(size(X1));
 Omega = [X1;C];
 [Uo,So,Vo] = approx(Omega);
@@ -89,14 +85,12 @@ for i = 3:size(DMDc.X,2)
 end
 toc;
 plotComp(FOM,DMDc,param.D,f.DMDc);
-%%
-[Phi,Lambda] = eig(A);
-[PhiB,LambdaB] = eig(B);
 %% plots
+[U,S] = eigs(A,pca.X.npc());
 clf(f.test);
-semilogx(axes(f.test),abs(Lambda(:)),'-');
+ax = axes(f.test);
+plot(ax,diff(U(:,3)),'.');
 figure(f.test);
-%% eDMD
 %% from databook.com
 % [Phi,Lambda,b] = DMD(X1,X2,10);
 
