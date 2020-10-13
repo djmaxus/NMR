@@ -23,14 +23,17 @@ x0 = setInit(Nx,0,0,1);
 %% FOM simulation
 source_term = q_init(0.6,-1e+3);
 param = setProblem(Nx,bc,source_term,D,x0);
-FOM = solveDif(Nx,Nt,param);
+FOM = solveDif(Nx,Nt,param,'train_mode',1);
 plotSol(FOM,f.FOM); drawnow;
 %% PCA
 X = FOM.X;
 pca.X = PCA(FOM.X,0.99,'init', zeros(size(X,1),1),'sval_deg',1);
 pca.X.plotSummary(f.PCA);
-%% ROM_I
-ROM = solveDif(Nx,Nt,param,'rom_stage',1,'encoder',pca);
+%% Gappy
+pca = truncRom2(pca,FOM);
+pca = approxRom2(pca,FOM);
+%% ROM_II
+ROM = solveDif(Nx,Nt,param,'rom_stage',2,'encoder',pca);
 plotComp(FOM,ROM,param.D,f.ROM);
 %% explore source term decompostion
 dt = 1/Nt;
