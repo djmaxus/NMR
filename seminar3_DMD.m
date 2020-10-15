@@ -89,7 +89,8 @@ plotComp(FOM,DMDc,param.D,f.DMDc);
 [U,S] = eigs(A,pca.X.npc());
 clf(f.test);
 ax = axes(f.test);
-plot(ax,diff(U(:,3)),'.');
+to_plot = abs(U(:,1));
+plot(ax,diff(to_plot),'.');
 figure(f.test);
 %% from databook.com
 % [Phi,Lambda,b] = DMD(X1,X2,10);
