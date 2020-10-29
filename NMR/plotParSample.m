@@ -1,31 +1,28 @@
-function [fig] = plotParSample(vals,val,varargin)
+function [] = plotParSample(fig,vals,val)
     %PLOTPARSAMPLE Summary of this function goes here
     %   Detailed explanation goes here
-    if length(varargin) >= 1
-        fig = varargin{1};
-    else
-        fig = figure;
-    end
-    fig.Name = 'Parameters';
+    clf(fig);
+    ax = axes(fig);
+    %%
     xmin = min(vals,[],'all');
     xmax = max(vals,[],'all');
     
-    scatter(vals(:,1),vals(:,2));
+    scatter(ax,vals(:,1),vals(:,2));
     
     if ~isempty(val)
         hold on;
-        scatter(val(:,1),val(:,2));
+        scatter(ax,val(:,1),val(:,2));
         hold off;
     end
     
-    xlim([1.1*xmin 1.1*xmax]);
-    ylim([1.1*xmin 1.1*xmax]);
-    axis square;
+    xlim(ax,[1.1*xmin 1.1*xmax]);
+    ylim(ax,[1.1*xmin 1.1*xmax]);
+    axis(ax,'equal');
     
-    xlabel('$b_0$','interpreter','latex');
-    ylabel('$b_1$','interpreter','latex');
+    xlabel(ax,'$b_0$','interpreter','latex');
+    ylabel(ax,'$b_1$','interpreter','latex');
     
-    legend('Train samples','Test sample');
-    title('Parameter samples');
+    legend(ax,'Train samples','Test sample');
+    title(ax,'Parameter samples');
 end
 

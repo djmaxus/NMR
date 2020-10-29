@@ -1,9 +1,9 @@
-function [fig] = drawImage(data,fig,clrmap)
+function [] = drawImage(ax,data,clrmap)
     %DRAWIMAGE Summary of this function goes here
     %   Detailed explanation goes here
-    fig = imagesc(reshape(data,60,60));
-    fig = colormap(gca,clrmap);
-    colorbar;
-    axis square;
+    imagesc(ax,reshape(data,60,60));
+    colormap(ax,clrmap);
+    colorbar(ax);
+    axis(ax,'equal');
 end
 

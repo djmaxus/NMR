@@ -1,6 +1,6 @@
 function vals = setParSample(pMax)
     vals = [];
-    N = 12;
+    N = 16;
     %% limit values
 
     out = zeros(1,2); % zero point
@@ -26,7 +26,7 @@ function vals = setParSample(pMax)
     vals = vals * pMax;
 
     %% inner samples
-    out = lhsdesign(max(N,4),2,'criterion','correlation');
+    out = lhsdesign(max(N,4),2,'smooth','off');
     out = 2 * pMax * out - pMax;
     vals = [vals;out];
 end
