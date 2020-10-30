@@ -1,12 +1,12 @@
 function [POD] = approxRom2(POD,train,varargin)
     %TRAINROM1 Summary of this function goes here
     %   Detailed explanation goes here
-    R = train.Rx;%[];
-    J = train.Jnz;%[];
-%     for i = 1:length(train.sol)
-%         R = [R,train.sol{i}.Rx];
-%         J = [J,train.sol{i}.Jnz];
-%     end
+    R = [];
+    J = [];
+    for i = 1:length(train)
+        R = [R,train{i}.Rx];
+        J = [J,train{i}.Jnz];
+    end
 %     add_frac = 1.0;
     %% Res POD + greedy
     nR = round(size(R,1)*0.01);

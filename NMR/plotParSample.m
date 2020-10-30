@@ -17,12 +17,15 @@ function [] = plotParSample(fig,vals,val)
     
     xlim(ax,[1.1*xmin 1.1*xmax]);
     ylim(ax,[1.1*xmin 1.1*xmax]);
-    axis(ax,'equal');
+    axis(ax,'square');
     
     xlabel(ax,'$b_0$','interpreter','latex');
     ylabel(ax,'$b_1$','interpreter','latex');
     
     legend(ax,'Train samples','Test sample');
     title(ax,'Parameter samples');
+    
+    box(ax,'on');
+    grid(ax,'on');
 end
 

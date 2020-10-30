@@ -4,6 +4,6 @@ function [] = drawImage(ax,data,clrmap)
     imagesc(ax,reshape(data,60,60));
     colormap(ax,clrmap);
     colorbar(ax);
-    axis(ax,'equal');
+    axis(ax,'square');
 end
 
