@@ -33,6 +33,7 @@ f.rom.dd = new_figure('ROM-DD');
 pMax = 1;
 vals = setParSample(pMax);
 bc.val = rand(1,2) * 2 * pMax - pMax;
+%%
 plotParSample(f.par,vals,bc.val);
 figure(f.par);
 
@@ -50,7 +51,7 @@ Nt = 100;
 bc.kind = 1;
 D =  D_init(0.9,1,0.5e-1);
 x0 = setInit(Nx,0.5,2,1);
-source_term = q_init(0.6,0);
+source_term = q_init(0.6,1e+3);
 param = setProblem(Nx,bc,source_term,D,x0);
 param.grids = grids;
 param.vals = vals;
