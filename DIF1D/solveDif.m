@@ -109,10 +109,10 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
     D.model = param.D.model;
     
     %% convergence parameters
-    kmax = 8;
-    kmin = 3;
+    kmax = 12;
+    kmin = 4;
     crit_rel = 1e-5;
-    crit_abs = 1e-7;
+    crit_abs = 1e-3;
     
     %% dataset initialization
     sol.t = zeros(1,round(1/dt_min)+1);
@@ -206,6 +206,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             end
             
             % convergence
+            delta = J'*R;
             delta = norm(J'*R);
 
             if k == 1
