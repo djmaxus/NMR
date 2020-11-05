@@ -30,10 +30,19 @@ function [POD] = approxRom2(POD,train,varargin)
     POD.Jnz.idx_mask = idx;
     
     %% Res oblique
-    POD.Rx.O = oblique(mask,POD.Rx.u(:,1:POD.Rx.npc()));
-    POD.Jnz.O = oblique(mask,POD.Jnz.u(:,1:POD.Jnz.npc()));
+    uR = POD.Rx.u(:,1:POD.Rx.npc());
+    uJ = POD.Jnz.u(:,1:POD.Jnz.npc());
+    POD.Rx.O = oblique(mask,uR);
+    POD.Jnz.O = oblique(mask,uJ);
     
     %% display Gappy scores
+    uR = mask' * uR;
+    uJ = mask' * uJ;
+    MR = uR' * uR;
+    MJ = uJ' * uJ;
+    POD.score.R = rcond(MR);
+    POD.score.J = rcond(MJ);
+    
     Rg = applyOblique(R,POD.Rx);
     Jg = applyOblique(J,POD.Jnz);
     dR = sqrt(meansqr(Rg-R));
