@@ -1,4 +1,3 @@
-function [O] = oblique(P,basis)
     %OBLIQUE Oblique vector projection
     %   Detailed explanation goes here
     %% operator to inverse
@@ -6,12 +5,10 @@ function [O] = oblique(P,basis)
     % SVD
     [U,S,V] = svd(M,'econ');
     % inverse S matrix
-    diagS = 1./ diag(S);
-    Sx = zeros(size(S'));
-    for i = 1:min(size(Sx))
-        Sx(i,i) = diagS(i);
-    end
+    S = diag(S);
+    S = 1./S;
+    S = diag(S);
     % generalized matrix inversion
-    Mx = V * Sx * U';
+    Mx = V * S * U';
     O = sparse(basis * Mx * P');
 end
