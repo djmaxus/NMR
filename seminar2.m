@@ -87,10 +87,8 @@ plotComp(FOM,ROM.i,param.D,f.rom.i);
 
 %% ROM-II train
 [POD] = truncRom2(POD,train.ii);
-POD.Rx.plotSummary(f.pod.r);
-figure(f.pod.r);
-POD.Jnz.plotSummary(f.pod.j);
-figure(f.pod.j);
+POD.Rx.plotSummary(f.pod.r); figure(f.pod.r);
+POD.Jnz.plotSummary(f.pod.j); figure(f.pod.j);
 %% Gappy-POD train
 [POD] = approxRom2(POD,train.ii);
 
