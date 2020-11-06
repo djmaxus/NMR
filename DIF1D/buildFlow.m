@@ -3,7 +3,7 @@ function [Jt,Jf] = buildFlow(X,dt,D,bc,POD)
     nmr = ~isempty(POD);
     % time derivative
     Jt = speye(N)./dt;
-    % flux 
+    % flux
     Jf = zeros(N+1,2);
     mask = 1:N+1;
     if nmr
@@ -14,7 +14,7 @@ function [Jt,Jf] = buildFlow(X,dt,D,bc,POD)
     end
     if nmr
         % gappy;
-        Jf = applyOblique(Jf.*[1,-1],POD).*[1,-1];  
+        Jf = applyOblique(Jf.*[1,-1],POD).*[1,-1];
     end
 end
 
@@ -39,7 +39,7 @@ function [J] = calcFlux(X,D,bc,i,rj)
                 x_dx = x_dx * ne(imax,1);
                 d_dx = d_dx * ne(j,1);
             elseif i == N+1
-                x_dx = x_dx * ne(imax,N+1);
+                x_dx = x_dx * ne(imax,2);
                 d_dx = d_dx * ne(j,2);
             end
             J( j ) = -D.val( i ) * (x_dx * (delta( 2 ) - delta(1)) + mult(1) * d_dx);
