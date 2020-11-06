@@ -57,8 +57,7 @@ param.grids = grids;
 param.vals = vals;
 param.Nx = Nx;
 param.Nt = Nt;
-%%
-% solve FOM
+%% solve FOM
 [FOM] = solveDif(Nx,Nt,param,'train_mode',1);
 plotSol(FOM,f.FOM); figure(f.FOM);
 %% PCA 2D-demo
