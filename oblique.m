@@ -1,5 +1,6 @@
-    %OBLIQUE Oblique vector projection
-    %   Detailed explanation goes here
+%OBLIQUE Oblique vector projection
+%   Detailed explanation goes here
+function [O] = oblique(P,basis)
     %% operator to inverse
     M = P' * basis;
     % SVD
