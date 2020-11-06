@@ -3,4 +3,3 @@ function [x0] = setInit(Nx,a,p,b)
     %   Detailed explanation goes here
     x0 = a * sin(p*2*pi*(1:Nx)'./Nx)+b;
 end
-

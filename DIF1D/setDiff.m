@@ -9,4 +9,3 @@ function [D] = setDiff(Nx,param)
     % scale
     D = D * S;
 end
-
