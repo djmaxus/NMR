@@ -20,7 +20,8 @@ class Solution():
         self.is_gappy = False
         self.X = np.zeros((param.Nx, param.Nt+1))
         self.t = np.zeros((param.Nt + 1))
-        self.Rx = np.zeros((param.Nx+1, 1))
+        self.Rx = np.zeros((param.Nx + 1, 1))
+        self.Jnz = np.zeros((param.Nx+1,1))
 
 
 class Diffusion():
@@ -28,7 +29,7 @@ class Diffusion():
         self.val = np.zeros((Nx+1, 1))
         for i in range(Nx+1):
             self.val[i] = (
-                Amp * np.sin(Period * 2*np.pi * i / (Nx+1)) + 1) * Scale
+                Amp * np.sin(Period * 2*np.pi * (i+1) / (Nx+1)) + 1) * Scale
         self.model = model
 
 
@@ -41,7 +42,7 @@ class Boundary():
 def setInitial(Nx, Amp=0, Period=0, Scale=1):
     x0 = np.zeros((Nx, 1))
     for i in range(Nx):
-        x0[i] = Amp * np.sin(Period * 2*np.pi * i / Nx) + Scale
+        x0[i] = Amp * np.sin(Period * 2*np.pi * (i+1) / Nx) + Scale
     return x0
 
 
@@ -50,7 +51,6 @@ def setSource(Nx, Pos=1.0, Val=0):
     index = round(Nx*Pos)
     q[index-1] = Val
     return q
-
 
 
 class Parameters():
@@ -83,15 +83,16 @@ def calcFluxRes(X, param, i):
             delta = np.array([X[i], X[i - 1]])
         x = max(delta[0], delta[1])
         mult = param.D.model(x)
-        val = - param.D.val[i] * mult[0] * (delta[0] - delta[1])
+        val = - param.D.val[i]*param.Nx**2 * mult[0] * (delta[0] - delta[1])
     else:
         pass
 
     return val
 
+
 def buildResidual(X, dt, param, encoder=None):
-    Rt = np.zeros((param.Nx, 1))
     Rt = (X[:, 1] - X[:, 0]) / dt
+    Rt = np.reshape(Rt,   (param.Nx,   1))
     mask = range(param.Nx+1)
     W = np.zeros((param.Nx + 1, 1))
     for i in mask:
@@ -99,14 +100,71 @@ def buildResidual(X, dt, param, encoder=None):
     return Rt, W
 
 
+def calcFluxJac(X, param, i):
+    val = np.zeros((1, 2))
+    if param.bc.first:
+        delta = np.zeros((2, 1))
+        if i == 0:
+            delta[0] = param.bc.val[1]
+            delta[1] = X[i]
+        elif i == param.Nx:
+            delta[0] = X[i-1]
+            delta[1] = param.bc.val[0]
+        else:
+            delta[0] = X[i-1]
+            delta[1] = X[i]
+        imax = 0
+        if delta[1] >= delta[0]:
+            imax = 1
+        x = delta[imax]
+        mult = param.D.model(x)
+        for j in range(2):
+            x_dx = 0
+            if imax == j:
+                x_dx = mult[1]
+
+            d_dx = -1
+            if j == 1:
+                d_dx = 1
+
+            if i == 0:
+                if imax == 0:
+                    x_dx = 0
+                if j == 0:
+                    d_dx = 0
+            elif i == param.Nx:
+                if imax == 1:
+                    x_dx = 0
+                if j == 1:
+                    d_dx = 0
+
+            val[0,j] = -param.D.val[i] * param.Nx**2*(x_dx *   (delta[1]-delta[0])+mult[0]*d_dx)
+    else:
+        pass
+    return val
+
+
 def buildFlow(X, dt, param, encoder=None):
-    Jt = np.zeros((param.Nx,   param.Nx))
-    Jf = np.zeros((param.Nx,   2))
+    Jt = np.eye(param.Nx)/dt
+    Jf = np.zeros((param.Nx + 1, 2))
+    mask = range(param.Nx + 1)
+    for i in mask:
+        Jf[i, :] = calcFluxJac(X[:, 1], param, i)
     return Jt, Jf
 
 
 def buildJacobian(Jf, Nx):
-    Jx = np.zeros((Nx,  Nx))
+    Jx = np.zeros((Nx, Nx))
+    for i in range(Nx):
+        if i != 0:
+            J1 = Jf[i, 0]
+            Jx[i, i-1] = -J1
+        J1 = Jf[i, 1]
+        J2 = Jf[i + 1, 0]
+        Jx[i, i] = J2 - J1
+        if i + 1 != Nx:
+            J2 = Jf[i+1, 1]
+            Jx[i, i+1] = J2
     return Jx
 
 
@@ -131,23 +189,15 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
     if is_encoded:
         Y = encoder.x.encode(X)
 
-    # paramter distribution
-    D = param.D
-    D.val = (param.Nx ** 2) * D.val
-
     # Newton iteration parameters
     kmax = 12
     kmin = 4
-    crit_rel = 1e-4
-    crit_abs = 1e-4
+    crit_rel = 1e-1
+    crit_abs = 1e-3
 
     # dataset initialization
     #     if is_encoded
     #         sol.Y = zeros(POD.X.npc(),round(1/dt_min)+1);
-    #     end
-    #     if train_mode
-    #         sol.Rx = [];
-    #         sol.Jnz = [];
     #     end
 
     # solution process
@@ -161,7 +211,7 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
             X[:, 1] = X[:, 0]
 
         sol.t[nstep] = t
-        sol.X[:, nstep - 1] = X[:, 0]
+        sol.X[:, nstep] = X[:, 0]
 
         is_converged = False
         for k in range(kmax):
@@ -179,7 +229,6 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
             Rx = W[1:param.Nx+1] - W[0:param.Nx]
             Rs = param.q
             R = Rt + Rx + Rs
-
             # Jacobian
             t_jac = -time.time()
             Jt, Jf = buildFlow(X,  dt,  param,  encoder)
@@ -190,11 +239,8 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
 
             if train_mode:
                 sol.Rx = np.append(sol.Rx, W, axis=1)
-            #             if train_mode
-            #                 % collect residual snapshots
-            #                 sol.Rx = [sol.Rx,W];
-            #                 sol.Jnz = [sol.Jnz,Jf.*[1,-1]];
-            #             end
+                sol.Jnz = np.append(sol.Jnz, np.reshape(Jf[:, 0],(param.Nx+1,1)), axis=1)
+                sol.Jnz = np.append(sol.Jnz,-np.reshape(Jf[:, 1],(param.Nx+1,1)),axis = 1)
 
             # Decoder Jacobian
             if is_encoded and (not is_step_fom):
@@ -250,7 +296,7 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
             if is_encoded and (not is_step_fom):
                 Y[:, 1] += dX
             else:
-                X[:, 1] += dX
+                X[:, 1] += np.reshape(dX,   param.Nx)
 
         if is_converged:
             is_step_fom = not (is_step_fom and (dt >= 1/param.Nt))
@@ -261,7 +307,6 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
 
             if dt < dt_min:
                 return_message = 'Not converged'
-                print(return_message)
                 break
             dt /= 4
 
