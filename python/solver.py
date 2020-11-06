@@ -19,23 +19,48 @@ class Solution():
         self.is_encoded = False
         self.is_gappy = False
         self.X = np.zeros((param.Nx, param.Nt+1))
-        self.t = np.zeros((param.Nt+1))
+        self.t = np.zeros((param.Nt + 1))
+        self.Rx = np.zeros((param.Nx+1, 1))
 
 
 class Diffusion():
-    def __init__(self, val=None, model=None):
-        self.val = val
+    def __init__(self, Nx, Amp=0, Period=0, Scale=1, model=None):
+        self.val = np.zeros((Nx+1, 1))
+        for i in range(Nx+1):
+            self.val[i] = (
+                Amp * np.sin(Period * 2*np.pi * i / (Nx+1)) + 1) * Scale
         self.model = model
 
 
+class Boundary():
+    def __init__(self, left, right, kind=1):
+        self.first = (kind == 1)
+        self.val = np.array((left, right))
+
+
+def setInitial(Nx, Amp=0, Period=0, Scale=1):
+    x0 = np.zeros((Nx, 1))
+    for i in range(Nx):
+        x0[i] = Amp * np.sin(Period * 2*np.pi * i / Nx) + Scale
+    return x0
+
+
+def setSource(Nx, Pos=1.0, Val=0):
+    q = np.zeros((Nx, 1))
+    index = round(Nx*Pos)
+    q[index-1] = Val
+    return q
+
+
+
 class Parameters():
-    def __init__(self, Nx=None, Nt=None, D=None, bc=None, x0=None, q=None):
+    def __init__(self, Nx=None, Nt=None, D=None, bc=None, x0=None, src=None):
         self.Nx = Nx
         self.Nt = Nt
         self.D = D
         self.bc = bc
         self.x0 = x0
-        self.q = q
+        self.q = src
 
 
 def setRomStage(rom_stage):
@@ -44,9 +69,33 @@ def setRomStage(rom_stage):
     return is_encoded, is_gappy
 
 
+def calcFluxRes(X, param, i):
+    val = 0
+    if param.bc.first:
+        delta = np.zeros((2, 1))
+        if i == 0:
+            delta[0] = X[i]
+            delta[1] = param.bc.val[0]
+        elif i == param.Nx:
+            delta[0] = param.bc.val[1]
+            delta[1] = X[i - 1]
+        else:
+            delta = np.array([X[i], X[i - 1]])
+        x = max(delta[0], delta[1])
+        mult = param.D.model(x)
+        val = - param.D.val[i] * mult[0] * (delta[0] - delta[1])
+    else:
+        pass
+
+    return val
+
 def buildResidual(X, dt, param, encoder=None):
-    Rt = np.zeros((param.Nx,   1))
-    W = np.zeros((param.Nx+1,   1))
+    Rt = np.zeros((param.Nx, 1))
+    Rt = (X[:, 1] - X[:, 0]) / dt
+    mask = range(param.Nx+1)
+    W = np.zeros((param.Nx + 1, 1))
+    for i in mask:
+        W[i] = calcFluxRes(X[:, 1], param, i)
     return Rt, W
 
 
@@ -78,8 +127,7 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
     dt_max = dt
 
     # initial condition
-    x0 = param.x0
-    X = np.concatenate((x0, x0), axis=1)
+    X = np.concatenate((param.x0, param.x0), axis=1)
     if is_encoded:
         Y = encoder.x.encode(X)
 
@@ -104,17 +152,18 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
 
     # solution process
     R0 = 1
-    nstep = 1
+    nstep = 0
     while t < 1.0:
         dt = min(dt, 1 - t)
-        t += dt
         if is_encoded and (not is_step_fom):
             Y[:, 1] = Y[:, 0]
         else:
             X[:, 1] = X[:, 0]
 
-        sol.t[nstep-1] = t
+        sol.t[nstep] = t
         sol.X[:, nstep - 1] = X[:, 0]
+
+        is_converged = False
         for k in range(kmax):
             if is_encoded and (not is_step_fom):
                 t_pod = -time.time()
@@ -139,6 +188,8 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
             Jx = buildJacobian(Jf,  param.Nx)
             J = Jt + Jx
 
+            if train_mode:
+                sol.Rx = np.append(sol.Rx, W, axis=1)
             #             if train_mode
             #                 % collect residual snapshots
             #                 sol.Rx = [sol.Rx,W];
@@ -196,56 +247,39 @@ def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False
                 dX[:] = 0
 
             # update
-            #             if and(is_encoded,~is_step_fom)
-            #                 Y(:,2) = Y(:,2) + dX;
-            #             else
-            #                 X(:,2) = X(:,2) + dX;
-            #             end
-            #         end
+            if is_encoded and (not is_step_fom):
+                Y[:, 1] += dX
+            else:
+                X[:, 1] += dX
 
-            #         if is_converged
-            #             waitbar(t/1,wb,[wb_msg,msg_add(is_step_fom)]);
-            #             if and(is_step_fom,dt >= 1/Nt)
-            #                 is_step_fom = false;
-            #             end
-            #         end
+        if is_converged:
+            is_step_fom = not (is_step_fom and (dt >= 1/param.Nt))
+        elif (k+1) >= kmax:
+            if adaptive_fom and (not is_step_fom):
+                is_step_fom = True
+                continue
 
-            #         if and(~is_converged,k >= kmax)
-            #             if adaptive_fom
-            #                 if (~is_step_fom)
-            #                     is_step_fom = true;
-            #                     continue;
-            #                 end
-            #             end
-            #             if (dt < dt_min)
-            #                 warning(['Not converged',newline(),...
-            #                     'Relative residual: ', num2str(delta/R0)]);
-            #                 break;
-            #             end
-            #             dt = dt/4;
-            #         end
+            if dt < dt_min:
+                return_message = 'Not converged'
+                print(return_message)
+                break
+            dt /= 4
 
-            #     end
-
-            #     sol.t(nstep) = t;
-            #     sol.t(nstep+1:end) = [];
-
-            #     sol.X(:,nstep) = X(:,1);
-            #     sol.X(:,nstep+1:end) = [];
-            #     if is_encoded
-            #         sol.Y(:,nstep) = Y(:,1);
-            #         sol.Y(:,nstep+1:end) = [];
-            #     end
-
-            #     sol.timelog.bld = sol.timelog.resbld + sol.timelog.jacbld + sol.timelog.pod;
-            #     sol.timelog.lin = sol.timelog.linsol + sol.timelog.proj;
-            #     sol.timelog.overall = sol.timelog.lin + sol.timelog.bld;
-            #     sol.timelog.iters.bld = sum(sol.timelog.kn,'all');
-            #     sol.timelog.iters.lin = sum(sol.timelog.kn-1,'all');
-            #     sol.timelog.lin_avg = sol.timelog.lin/sol.timelog.iters.lin;
-            #     sol.timelog.bld_avg = sol.timelog.bld/sol.timelog.iters.bld;
-            #     sol.timelog.iters.lin_avg = sol.timelog.iters.lin / length(sol.timelog.kn);
-            #     sol.timelog.iters.bld_avg = sol.timelog.iters.bld / (length(sol.timelog.kn)-1);
-            #     delete(wb);
-            # end
+    # sol.t(nstep) = t;
+    # sol.t(nstep+1:end) = [];
+    # sol.X(:,nstep) = X(:,1);
+    # sol.X(:,nstep+1:end) = [];
+    # if is_encoded
+    #    sol.Y(:,nstep) = Y(:,1);
+    #    sol.Y(:,nstep+1:end) = [];
+    # end
+    #sol.timelog.bld = sol.timelog.resbld + sol.timelog.jacbld + sol.timelog.pod;
+    #sol.timelog.lin = sol.timelog.linsol + sol.timelog.proj;
+    #sol.timelog.overall = sol.timelog.lin + sol.timelog.bld;
+    #sol.timelog.iters.bld = sum(sol.timelog.kn,'all');
+    #sol.timelog.iters.lin = sum(sol.timelog.kn-1,'all');
+    #sol.timelog.lin_avg = sol.timelog.lin/sol.timelog.iters.lin;
+    #sol.timelog.bld_avg = sol.timelog.bld/sol.timelog.iters.bld;
+    #sol.timelog.iters.lin_avg = sol.timelog.iters.lin / length(sol.timelog.kn);
+    #sol.timelog.iters.bld_avg = sol.timelog.iters.bld / (length(sol.timelog.kn)-1);
     return sol, return_code, return_message
