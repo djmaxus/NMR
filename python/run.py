@@ -1,15 +1,17 @@
-import numpy as np
 import solver
+import numpy as np
 
 
 def model(u):
     return np.array([u**2+1, 2*max(u, 0)])
+
+
 Nt = 10
 Nx = 10
 x0 = solver.setInitial(Nx, 0.5, 2, 1)
 bc = solver.Boundary(0, 0)
-D = solver.Diffusion(Nx, 0.9, 1, 5e-2, model=model)
-q = solver.setSource(Nx, 0.6, 1e+3)
+D = solver.Diffusion(Nx, 0.9, 1, 0.5e-1, model=model)
+q = solver.setSource(Nx, 0.6, 0)
 param = solver.Parameters(
     Nx=Nx,
     Nt=Nt,
@@ -21,4 +23,6 @@ sol, code, message = solver.solve(param, train_mode=True)
 X = sol.X
 T = sol.t
 W = sol.Rx
-print(message)
+dW = sol.Jnz
+Dval = D.val * param.Nx ** 2
+print(X)
