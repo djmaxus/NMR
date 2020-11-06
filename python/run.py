@@ -3,7 +3,8 @@ import solver
 
 Nt = 10
 Nx = 10
-param = solver.Parameters(D=solver.Diffusion(val=np.ones((Nx, 1))))
+param = solver.Parameters(
+    Nx=Nx, Nt=Nt, D=solver.Diffusion(val=np.ones((Nx, 1))), q=0)
 param.x0 = np.zeros((Nx, 1))
-sol, code, message = solver.solve(Nx, Nt, param)
+sol, code, message = solver.solve(param)
 print(message)

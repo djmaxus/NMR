@@ -9,19 +9,17 @@ class TimeLog():
         self.pod = pod
         self.resbld = resbld
         self.jacbld = jacbld
-        self.kn = np.zeros((1, Nt))
+        self.kn = np.zeros((Nt+1))
 
 
 class Solution():
-    def __init__(self, Nt, Nx, param):
-        self.Nt = Nt
-        self.Nx = Nx
+    def __init__(self, param):
         self.param = param
-        self.timelog = TimeLog(Nt=Nt)
+        self.timelog = TimeLog(Nt=param.Nt)
         self.is_encoded = False
         self.is_gappy = False
-        self.X = np.zeros((Nx, Nt+1))
-        self.t = np.zeros((1, Nt+1))
+        self.X = np.zeros((param.Nx, param.Nt+1))
+        self.t = np.zeros((param.Nt+1))
 
 
 class Diffusion():
@@ -31,10 +29,13 @@ class Diffusion():
 
 
 class Parameters():
-    def __init__(self, D=Diffusion(), bc=None, x0=None):
+    def __init__(self, Nx=None, Nt=None, D=None, bc=None, x0=None, q=None):
+        self.Nx = Nx
+        self.Nt = Nt
         self.D = D
         self.bc = bc
         self.x0 = x0
+        self.q = q
 
 
 def setRomStage(rom_stage):
@@ -43,17 +44,28 @@ def setRomStage(rom_stage):
     return is_encoded, is_gappy
 
 
-def buildResidual(X, dt, D, bc):
-    Rt = X[:, 1]
-    W = 0
+def buildResidual(X, dt, param, encoder=None):
+    Rt = np.zeros((param.Nx,   1))
+    W = np.zeros((param.Nx+1,   1))
     return Rt, W
 
 
-def solve(Nx, Nt, param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False, is_step_fom=False):
+def buildFlow(X, dt, param, encoder=None):
+    Jt = np.zeros((param.Nx,   param.Nx))
+    Jf = np.zeros((param.Nx,   2))
+    return Jt, Jf
+
+
+def buildJacobian(Jf, Nx):
+    Jx = np.zeros((Nx,  Nx))
+    return Jx
+
+
+def solve(param, rom_stage=0, encoder=None, train_mode=False, adaptive_fom=False, is_step_fom=False):
     return_code = 0
     return_message = 'OK'
     # Parameter save
-    sol = Solution(Nt, Nx, param)
+    sol = Solution(param)
     # encoding status
     is_encoded, is_gappy = setRomStage(rom_stage)
     sol.is_encoded = is_encoded
@@ -61,7 +73,7 @@ def solve(Nx, Nt, param, rom_stage=0, encoder=None, train_mode=False, adaptive_f
 
     # time settings
     t = 0.0
-    dt = 1./Nt
+    dt = 1./param.Nt
     dt_min = dt
     dt_max = dt
 
@@ -73,7 +85,7 @@ def solve(Nx, Nt, param, rom_stage=0, encoder=None, train_mode=False, adaptive_f
 
     # paramter distribution
     D = param.D
-    D.val = (Nx ** 2) * D.val
+    D.val = (param.Nx ** 2) * D.val
 
     # Newton iteration parameters
     kmax = 12
@@ -90,7 +102,7 @@ def solve(Nx, Nt, param, rom_stage=0, encoder=None, train_mode=False, adaptive_f
     #         sol.Jnz = [];
     #     end
 
-    #     % solution process
+    # solution process
     R0 = 1
     nstep = 1
     while t < 1.0:
@@ -112,27 +124,20 @@ def solve(Nx, Nt, param, rom_stage=0, encoder=None, train_mode=False, adaptive_f
 
             # Residual
             t_res = -time.time()
-            Rt, W = buildResidual(X, dt, D, param.bc)
+            Rt, W = buildResidual(X, dt, param,  encoder)
             t_res += time.time()
             sol.timelog.resbld += t_res
+            Rx = W[1:param.Nx+1] - W[0:param.Nx]
+            Rs = param.q
+            R = Rt + Rx + Rs
 
-            #             t_res_build = tic;
-            #             [Rt,W] = buildResidual(X,dt,D,param.bc,PODr);
-            #             t_res_build = toc(t_res_build);
-            #             sol.timelog.resbld = sol.timelog.resbld + t_res_build;
-            #             Rx = W(2:Nx+1)-W(1:Nx);
-            #             R = Rt + Rx;
-            #             % source term
-            #             Rs = param.q.val;
-            #             R = R + Rs;
-
-            #             % Jacobian
-            #             t_jac_build = tic;
-            #             [Jt,Jf] = buildFlow(X,dt,D,param.bc,PODj);
-            #             t_jac_build = toc(t_jac_build);
-            #             sol.timelog.jacbld = sol.timelog.jacbld + t_jac_build;
-            #             [Jx] = buildJacobian(Jf,Nx);
-            #             J = Jx + Jt;
+            # Jacobian
+            t_jac = -time.time()
+            Jt, Jf = buildFlow(X,  dt,  param,  encoder)
+            t_jac += time.time()
+            sol.timelog.jacbld += t_jac
+            Jx = buildJacobian(Jf,  param.Nx)
+            J = Jt + Jx
 
             #             if train_mode
             #                 % collect residual snapshots
@@ -140,67 +145,57 @@ def solve(Nx, Nt, param, rom_stage=0, encoder=None, train_mode=False, adaptive_f
             #                 sol.Jnz = [sol.Jnz,Jf.*[1,-1]];
             #             end
 
-            #             % Decoder Jacobian
-            #             if and(is_encoded,~is_step_fom)
-            #                 t_projection = tic;
-            #                 J = J * POD.X.JD(Y(:,2));
-            #                 t_projection = toc(t_projection);
-            #                 sol.timelog.proj = sol.timelog.proj + t_projection;
-            #             end
+            # Decoder Jacobian
+            if is_encoded and (not is_step_fom):
+                t_proj = -time.time()
+                J = J @ encoder.x.decJac(Y[:,  1])
+                t_proj += time.time()
+                sol.timelog.proj += t_proj
 
-            #             % convergence
-            #             delta = norm(J'*R);
+            # convergence
+            delta = np.linalg.norm(J.T@R)
+            if k == 0:
+                R0 = delta
 
-            #             if k == 1
-            #                 R0 = delta;
-            #             end
-            #             is_converged_abs = delta*dt <= crit_abs;
-            #             is_converged_rel = delta <= crit_rel * R0;
-            #             if is_converged_abs
-            #                 is_converged = is_converged_abs;
-            #             else
-            #                 is_converged = is_converged_rel;
-            #             end
+            is_conv_abs = (delta * dt) <= crit_abs
+            is_conv_rel = delta <= (crit_rel*R0)
+            is_converged = is_conv_abs or is_conv_rel
 
-            #             if is_converged
-            #                 sol.timelog.kn(nstep) = k;
-            #                 nstep = nstep + 1;
-            #                 t = t+dt;
-            #                 if and(is_encoded,~is_step_fom)
-            #                     Y(:,1) = Y(:,2);
-            #                     X(:,1) = POD.X.decode(Y(:,1));
-            #                 else
-            #                     X(:,1) = X(:,2);
-            #                 end
-            #                 % timestep increase
-            #                 if k <= kmin
-            #                     dt =  dt * 2;
-            #                     dt = min(dt,dt_max);
-            #                 end
-            #                 if and(is_encoded,is_step_fom)
-            #                     Y = POD.X.encode(X);
-            #                 end
+            if is_converged:
+                sol.timelog.kn[nstep-1] = k
+                nstep += 1
+                t += dt
 
-            #                 break;
-            #             elseif k == kmax
-            #                 %                 dt = dt / 4;
-            #                 break;
-            #             end
+                if is_encoded and (not is_step_fom):
+                    Y[:,  0] = Y[:,  1]
+                    X[:,  0] = encoder.x.decode(Y[:,  0])
+                else:
+                    X[:, 0] = X[:, 1]
 
-            #             R = J'*R;
-            #             J = J' * J;
-            #             % linsolve
-            #             t_lin_solve = tic;
-            #             dX = (J) \ (-R);
-            #             t_lin_solve = toc(t_lin_solve);
-            #             sol.timelog.linsol = sol.timelog.linsol + t_lin_solve;
+                # timestep increase
+                if k < kmin:
+                    dt *= 2
+                    dt = min(dt,   dt_max)
 
-            #             is_weak = sum(isnan(dX)) + sum(isinf(dX));
-            #             if is_weak > 0
-            #                 dX(:) = 0;
-            #             end
+                if is_encoded and is_step_fom:
+                    Y = encoder.x.encode(X)
 
-            #             % update
+                break
+            elif (k + 1 == kmax):
+                dt /= 4
+                break
+
+            # linear system solve
+            t_lin = -time.time()
+            dX = np.linalg.solve(J.T @ J,   -J.T@R)
+            t_lin += time.time()
+            sol.timelog.linsol += t_lin
+
+            is_weak = np.sum(np.isnan(dX)) + np.sum(np.isinf(dX))
+            if is_weak > 0:
+                dX[:] = 0
+
+            # update
             #             if and(is_encoded,~is_step_fom)
             #                 Y(:,2) = Y(:,2) + dX;
             #             else
@@ -254,24 +249,3 @@ def solve(Nx, Nt, param, rom_stage=0, encoder=None, train_mode=False, adaptive_f
             #     delete(wb);
             # end
     return sol, return_code, return_message
-
-    # function [is_encoded,is_gappy] = setRomStage(rom_stage)
-    #     is_encoded = false;
-    #     is_gappy = false;
-
-    #     if rom_stage >= 1
-    #         is_encoded = true;
-    #     end
-    #     if rom_stage >= 2
-    #         is_gappy = true;
-    #     end
-
-    # end
-
-    # function [out] = msg_add(is_fom)
-    #     if is_fom
-    #         out = 'FOM';
-    #     else
-    #         out = 'DEF';
-    #     end
-    # end
