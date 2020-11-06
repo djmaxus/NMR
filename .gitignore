@@ -3,3 +3,4 @@ html**
 *.m~
 *.mat
 .vscode
+*__pycache__*
