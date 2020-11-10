@@ -109,9 +109,9 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
     D.model = param.D.model;
     
     %% convergence parameters
-    kmax = 8;
+    kmax = 12;
     kmin = 4;
-    crit_rel = 1e-9;
+    crit_rel = 1e-3;
     crit_abs = 1e-3;
     
     %% dataset initialization
