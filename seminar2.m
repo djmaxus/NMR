@@ -38,8 +38,8 @@ plotParSample(f.par,vals,bc.val);
 figure(f.par);
 
 %% prepare grid sequence
-NxMin = 2000;
-NxMax = 2000;
+NxMin = 1000;
+NxMax = 1000;
 NxCount = 1;
 grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 %% problem setup
@@ -85,11 +85,11 @@ plotComp(FOM,ROM.i,param.D,f.rom.i);
 [train.ii] = genRom2(param,POD);
 
 %% ROM-II train
-[POD] = truncRom2(POD,train.ii);
+[POD,Rx,Jnz] = truncRom2(POD,train.ii);
 POD.Rx.plotSummary(f.pod.r); figure(f.pod.r);
 POD.Jnz.plotSummary(f.pod.j); figure(f.pod.j);
 %% Gappy-POD train
-[POD] = approxRom2(POD,train.ii);
+[POD] = approxRom2(POD,Rx,Jnz);
 
 %% ROM-II test
 [ROM.ii] = solveDif(Nx,Nt,param,'rom_stage',2,'encoder',POD);

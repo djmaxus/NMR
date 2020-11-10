@@ -1,13 +1,6 @@
-function [POD] = approxRom2(POD,train,varargin)
+function [POD] = approxRom2(POD,R,J)
     %TRAINROM1 Summary of this function goes here
     %   Detailed explanation goes here
-    R = [];
-    J = [];
-    for i = 1:length(train)
-        R = [R,train{i}.Rx];
-        J = [J,train{i}.Jnz];
-    end
-%     add_frac = 1.0;
     %% Res POD + greedy
     nR = round(size(R,1)*0.01);
     nR = max(nR,POD.Rx.npc());

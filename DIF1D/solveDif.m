@@ -44,7 +44,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
                 varargin(1) = [];
             end
         end
-    end   
+    end
     %% stage name
     switch rom_stage
         case 0
@@ -109,9 +109,9 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
     D.model = param.D.model;
     
     %% convergence parameters
-    kmax = 12;
+    kmax = 8;
     kmin = 4;
-    crit_rel = 1e-5;
+    crit_rel = 1e-9;
     crit_abs = 1e-3;
     
     %% dataset initialization
@@ -121,11 +121,11 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         sol.Y = zeros(POD.X.npc(),round(1/dt_min)+1);
     end
     if train_mode
-        sol.Rx = [];
-        sol.Jnz = [];
+        sol.Rx = {};
+        sol.Jnz = {};
     end
     
-    % solution process
+    %% solution process
     wb_msg = [sol.name,': step '];
     wb = waitbar(t,wb_msg);
     R0 = 1;
@@ -158,6 +158,12 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         else
             PODr = [];
             PODj = [];
+        end
+        if train_mode
+            sol.Rx = [sol.Rx,cell(1)];
+            sol.Rx{end} = zeros(Nx+1,kmax);
+            sol.Jnz = [sol.Jnz,cell(1)];
+            sol.Jnz{end} = zeros(Nx+1,2*kmax);
         end
         for k = 1:kmax
             
@@ -193,8 +199,8 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             
             if train_mode
                 % collect residual snapshots
-                sol.Rx = [sol.Rx,W];
-                sol.Jnz = [sol.Jnz,Jf.*[1,-1]];
+                sol.Rx{end}(:,k) = W;
+                sol.Jnz{end}(:,2*k-1:2*k) = Jf.*[1,-1];
             end
             
             % Decoder Jacobian
@@ -206,9 +212,8 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             end
             
             % convergence
-            delta = J'*R;
             delta = norm(J'*R);
-
+            
             if k == 1
                 R0 = delta;
             end
@@ -221,24 +226,30 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             end
             
             if is_converged
-                sol.timelog.kn(nstep) = k;
+                % time update
                 nstep = nstep + 1;
                 t = t+dt;
+                % solution update
                 if and(is_encoded,~is_step_fom)
                     Y(:,1) = Y(:,2);
                     X(:,1) = POD.X.decode(Y(:,1));
                 else
                     X(:,1) = X(:,2);
                 end
+                if and(is_encoded,is_step_fom)
+                    Y = POD.X.encode(X);
+                end
                 % timestep increase
                 if k <= kmin
                     dt =  dt * 2;
                     dt = min(dt,dt_max);
                 end
-                if and(is_encoded,is_step_fom)
-                    Y = POD.X.encode(X);
+                % log
+                sol.timelog.kn(nstep) = k;
+                if train_mode
+                    sol.Rx{end}(:,k+1:end) = [];
+                    sol.Jnz{end}(:,2*(k+1)-1:end) = [];
                 end
-                
                 break;
             elseif k == kmax
                 %                 dt = dt / 4;
@@ -274,6 +285,10 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         end
         
         if and(~is_converged,k >= kmax)
+            if train_mode
+                sol.Rx(end) = [];
+                sol.Jnz(end) = [];
+            end
             if adaptive_fom
                 if (~is_step_fom)
                     is_step_fom = true;
