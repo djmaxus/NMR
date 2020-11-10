@@ -1,14 +1,14 @@
 %% startup
-close all;
 clc;
-
+% internal
 addpath('./DIF1D');
-addpath('./POD');
-addpath('./NMR');
-
+addpath('./ROM');
+addpath('./utility');
+addpath('./pcaDemo');
+% external
 addpath(genpath('../POD'));
 addpath('../objective-pca');
-addpath('../objective-pca/utility');
+%
 definitions;
 %% plots
 close all;
@@ -38,8 +38,8 @@ plotParSample(f.par,vals,bc.val);
 figure(f.par);
 
 %% prepare grid sequence
-NxMin = 1000;
-NxMax = 1000;
+NxMin = 500;
+NxMax = 500;
 NxCount = 1;
 grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 %% problem setup
@@ -129,18 +129,18 @@ ROM.dd.name = 'ROM_{DD}';
 
 plotComp(FOM,ROM.dd,param.D,f.rom.dd);
 %%
-X = [];
-for i = 1:length(train.i)
-    X = [X,train.i{i}.X];
-end
-defaultVacSettings = {...
-    'ShowProgressWindow',             1 ...
-    ,'ScaleData',                      0 ...
-    ,'SparsityRegularization',         0 ...
-    ,'L2WeightRegularization',         1e-4 ...
-    ,'EncoderTransferFunction', 'logsig' ...
-    ,'DecoderTransferFunction', 'purelin' ...
-    ,'UseGPU',true
-    };
-ae = trainAutoencoder(X, POD.X.npc(), defaultVacSettings{1:end});
+% X = [];
+% for i = 1:length(train.i)
+%     X = [X,train.i{i}.X];
+% end
+% defaultVacSettings = {...
+%     'ShowProgressWindow',             1 ...
+%     ,'ScaleData',                      0 ...
+%     ,'SparsityRegularization',         0 ...
+%     ,'L2WeightRegularization',         1e-4 ...
+%     ,'EncoderTransferFunction', 'logsig' ...
+%     ,'DecoderTransferFunction', 'purelin' ...
+%     ,'UseGPU',true
+%     };
+% ae = trainAutoencoder(X, POD.X.npc(), defaultVacSettings{1:end});
 
