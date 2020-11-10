@@ -7,7 +7,7 @@ function [POD,R,J] = truncRom2(POD,train)
     
     r0 = zeros(size(R,1),1);
     
-    POD.Rx = PCA(R,0.99,'init',r0,'sval_deg',1,'robust',true);
+    POD.Rx = PCA(R,0.99,'init',r0,'sval_deg',1,'robust',false);
     POD.Jnz = PCA(J,0.99,'sval_deg',1);
     
     Nr = max(POD.Rx.npc(),POD.X.npc());
