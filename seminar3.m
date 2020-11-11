@@ -23,6 +23,10 @@ norm(X2 - X)
 %% eDMD
 [Ae,Ue,Le,be] = DMD([X1;Y1],[X_dot;Y_dot],20);
 %% eDMD test
-Z2 = [X1;Y1] + dt * Ae*[X1;Y1];
+Z2 = zeros(size([X;W]));
+Z2(:,1) = [X(:,1);W(:,1)];
+for i = 2:size(Z2,2)
+    Z2(:,i) = Z2(:,i-1) + dt * Ae*Z2(:,i-1);
+end
 X2e = Z2(1:size(X,1),:);
-norm(X2e - X(:,2:end))
+norm(X2e - X)
