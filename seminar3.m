@@ -19,7 +19,7 @@ X2(:,1) = X(:,1);
 for i = 2:size(X,2)
     X2(:,i) = X2(:,i-1) + dt * A*X2(:,i-1);
 end
-norm(X2 - X)
+norm(X2 - X,'fro')
 %% eDMD
 [Ae,Ue,Le,be] = DMD([X1;Y1],[X_dot;Y_dot],20);
 %% eDMD test
@@ -29,4 +29,4 @@ for i = 2:size(Z2,2)
     Z2(:,i) = Z2(:,i-1) + dt * Ae*Z2(:,i-1);
 end
 X2e = Z2(1:size(X,1),:);
-norm(X2e - X)
+norm(X2e - X,'fro')
