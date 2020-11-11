@@ -93,7 +93,7 @@ to_plot = abs(U(:,1));
 plot(ax,diff(to_plot),'.');
 figure(f.test);
 %% from databook.com
-% [Phi,Lambda,b] = DMD(X1,X2,10);
+[Phi,Lambda,b] = DMD(X1,X2,10);
 
 
 
