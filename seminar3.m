@@ -11,8 +11,9 @@ X_dot = diff(X,1,2)./dt;
 % nonlinear flows
 Y1 = W(:,1:end-1);
 Y_dot = diff(W,1,2)./dt;
+Ndmd = Nt;
 %% DMD
-[A, U, L, b] = DMD(X1,X_dot,10);
+[A, U, L, b] = DMD(X1,X_dot,Ndmd);
 %% DMD test
 X2 = zeros(size(X));
 X2(:,1) = X(:,1);
@@ -21,7 +22,7 @@ for i = 2:size(X,2)
 end
 norm(X2 - X,'fro')
 %% eDMD
-[Ae,Ue,Le,be] = DMD([X1;Y1],[X_dot;Y_dot],20);
+[Ae,Ue,Le,be] = DMD([X1;Y1],[X_dot;Y_dot],Ndmd);
 %% eDMD test
 Z2 = zeros(size([X;W]));
 Z2(:,1) = [X(:,1);W(:,1)];
