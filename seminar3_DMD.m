@@ -1,5 +1,14 @@
-startup;
+%% startup
 clc;
+% internal
+addpath('./DIF1D');
+addpath('./ROM');
+addpath('./utility');
+addpath('./pcaDemo');
+% external
+addpath(genpath('../POD'));
+addpath('../objective-pca');
+%
 definitions;
 %% plots
 close all;
