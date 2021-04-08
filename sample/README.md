@@ -10,12 +10,12 @@
 ## Contents
 |                               File | Description |
 |-----------------------------------:|:------------|
-|     [calcGrad.m](./calcGrad.m)     ||
-|  [findSimplex.m](./findSimplex.m)  ||
-|   [getParGrid.m](./getParGrid.m)   ||
-| [interpTriang.m](./interpTriang.m) ||
-|[plotParSample.m](./plotParSample.m)||
-| [setParSample.m](./setParSample.m) ||
+|     [calcGrad.m](./calcGrad.m)     | least-squares N-dimensional gradient approximation |
+|  [findSimplex.m](./findSimplex.m)  | find N-dimensional simplex within given point set <br>such that the simplex encloses input point|
+|   [getParGrid.m](./getParGrid.m)   | build & plot N-dimensional Delaunay triangulation|
+| [interpTriang.m](./interpTriang.m) | least-squares linear interpolation of functions|
+|[plotParSample.m](./plotParSample.m)| plot a set of 2D points|
+| [setParSample.m](./setParSample.m) | Latin Hypercube Sampling in 2D space within given range <br>with additional points on bounding box and in the zero point|
 
 
 ## Links
