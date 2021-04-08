@@ -1,7 +1,7 @@
 function [sol] = solveDif(Nx,Nt,param,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
-    
+
     % timelog
     sol.timelog.linsol = 0;
     sol.timelog.proj = 0;
@@ -9,11 +9,11 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
     sol.timelog.resbld = 0;
     sol.timelog.jacbld = 0;
     sol.timelog.kn = zeros(1,Nt);
-    
+
     % Parameter save
     sol.D = param.D;
     sol.bc = param.bc;
-    
+
     %% ROM mode processing
     rom_stage = 0;
     train_mode = false;
@@ -56,8 +56,8 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         otherwise
             sol.name = 'ROM';
     end
-    
-    
+
+
     %% encoding status
     [is_encoded,is_gappy] = setRomStage(rom_stage);
     if is_encoded
@@ -77,17 +77,17 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         PODj = [];
     end
     dd_app = and(rom_stage > 0,~isempty(Ydd));
-    
+
     %
     sol.is_encoded = is_encoded;
     sol.is_gappy = is_gappy;
     sol.dd_app = dd_app;
-    
+
     %% problem statement
     % time settings
     t = 0;
     dt = 1/Nt;
-    
+
     if train_mode
         dt_min = dt;
         dt_max = dt;
@@ -101,19 +101,19 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
     if is_encoded
         Y = POD.X.encode(X);
     end
-    
+
     % paramter distribution
-    
+
     % space discretization
     D.val = param.D.val*Nx^2;
     D.model = param.D.model;
-    
+
     %% convergence parameters
     kmax = 12;
     kmin = 4;
     crit_rel = 1e-3;
     crit_abs = 1e-3;
-    
+
     %% dataset initialization
     sol.t = zeros(1,round(1/dt_min)+1);
     sol.X = zeros(Nx,round(1/dt_min)+1);
@@ -124,7 +124,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         sol.Rx = {};
         sol.Jnz = {};
     end
-    
+
     %% solution process
     wb_msg = [sol.name,': step '];
     wb = waitbar(t,wb_msg);
@@ -135,7 +135,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         if dt < 1e-10
             break;
         end
-        
+
         if and(is_encoded,~is_step_fom)
             Y(:,2) = Y(:,1);
             if dd_app
@@ -146,7 +146,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         else
             X(:,2) = X(:,1);
         end
-        
+
         sol.t(nstep) = t;
         sol.X(:,nstep) = X(:,1);
         if is_encoded
@@ -166,7 +166,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             sol.Jnz{end} = zeros(Nx+1,2*kmax);
         end
         for k = 1:kmax
-            
+
             if and(is_encoded,~is_step_fom)
                 % decoding
                 t_pod = tic;
@@ -174,9 +174,9 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
                 t_pod = toc(t_pod);
                 sol.timelog.pod = sol.timelog.pod + t_pod;
             end
-            
+
             % Residual
-            
+
             t_res_build = tic;
             [Rt,W] = buildResidual(X,dt,D,param.bc,PODr);
             t_res_build = toc(t_res_build);
@@ -186,8 +186,8 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             % source term
             Rs = param.q.val;
             R = R + Rs;
-            
-            
+
+
             % Jacobian
             t_jac_build = tic;
             [Jt,Jf] = buildFlow(X,dt,D,param.bc,PODj);
@@ -195,14 +195,14 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             sol.timelog.jacbld = sol.timelog.jacbld + t_jac_build;
             [Jx] = buildJacobian(Jf,Nx);
             J = Jx + Jt;
-            
-            
+
+
             if train_mode
                 % collect residual snapshots
                 sol.Rx{end}(:,k) = W;
                 sol.Jnz{end}(:,2*k-1:2*k) = Jf.*[1,-1];
             end
-            
+
             % Decoder Jacobian
             if and(is_encoded,~is_step_fom)
                 t_projection = tic;
@@ -210,10 +210,10 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
                 t_projection = toc(t_projection);
                 sol.timelog.proj = sol.timelog.proj + t_projection;
             end
-            
+
             % convergence
             delta = norm(J'*R);
-            
+
             if k == 1
                 R0 = delta;
             end
@@ -224,7 +224,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             else
                 is_converged = is_converged_rel;
             end
-            
+
             if is_converged
                 % time update
                 nstep = nstep + 1;
@@ -255,7 +255,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
                 %                 dt = dt / 4;
                 break;
             end
-            
+
             R = J'*R;
             J = J' * J;
             % linsolve
@@ -263,12 +263,12 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             dX = (J) \ (-R);
             t_lin_solve = toc(t_lin_solve);
             sol.timelog.linsol = sol.timelog.linsol + t_lin_solve;
-            
+
             is_weak = sum(isnan(dX)) + sum(isinf(dX));
             if is_weak > 0
                 dX(:) = 0;
             end
-            
+
             % update
             if and(is_encoded,~is_step_fom)
                 Y(:,2) = Y(:,2) + dX;
@@ -276,14 +276,14 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
                 X(:,2) = X(:,2) + dX;
             end
         end
-        
+
         if is_converged
             waitbar(t/1,wb,[wb_msg,msg_add(is_step_fom)]);
             if and(is_step_fom,dt >= 1/Nt)
                 is_step_fom = false;
             end
         end
-        
+
         if and(~is_converged,k >= kmax)
             if train_mode
                 sol.Rx(end) = [];
@@ -302,19 +302,19 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             end
             dt = dt/4;
         end
-        
+
     end
-    
+
     sol.t(nstep) = t;
     sol.t(nstep+1:end) = [];
-    
+
     sol.X(:,nstep) = X(:,1);
     sol.X(:,nstep+1:end) = [];
     if is_encoded
         sol.Y(:,nstep) = Y(:,1);
         sol.Y(:,nstep+1:end) = [];
     end
-    
+
     sol.timelog.bld = sol.timelog.resbld + sol.timelog.jacbld + sol.timelog.pod;
     sol.timelog.lin = sol.timelog.linsol + sol.timelog.proj;
     sol.timelog.overall = sol.timelog.lin + sol.timelog.bld;
@@ -330,14 +330,14 @@ end
 function [is_encoded,is_gappy] = setRomStage(rom_stage)
     is_encoded = false;
     is_gappy = false;
-    
+
     if rom_stage >= 1
         is_encoded = true;
     end
     if rom_stage >= 2
         is_gappy = true;
     end
-    
+
 end
 
 function [out] = msg_add(is_fom)

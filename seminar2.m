@@ -1,7 +1,7 @@
 %% startup
 clc;
 % internal
-addpath('./DIF1D');
+addpath('./PDESolver');
 addpath('./ROM');
 addpath('./utility');
 addpath('./pcaDemo');
@@ -132,4 +132,3 @@ plotComp(FOM,ROM.dd,param.D,f.rom.dd);
 seminar3;
 %%
 % seminar_encoder;
-

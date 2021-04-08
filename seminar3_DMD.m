@@ -1,7 +1,7 @@
 %% startup
 clc;
 % internal
-addpath('./DIF1D');
+addpath('./PDESolver');
 addpath('./ROM');
 addpath('./utility');
 addpath('./pcaDemo');
@@ -103,10 +103,3 @@ plot(ax,diff(to_plot),'.');
 figure(f.test);
 %% from databook.com
 [Phi,Lambda,b] = DMD(X1,X2,10);
-
-
-
-
-
-
-
