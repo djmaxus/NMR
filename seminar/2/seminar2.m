@@ -1,14 +1,7 @@
 %% startup
 clc;
-% internal
-addpath('./PDESolver');
-addpath('./ROM');
-addpath('./utility');
-addpath('./pcaDemo');
-% external
-addpath(genpath('../POD'));
-addpath('../objective-pca');
-%
+addpath(genpath('../../POD'));
+addpath(genpath('../'));
 definitions;
 %% plots
 close all;
@@ -58,7 +51,7 @@ param.vals = vals;
 param.Nx = Nx;
 param.Nt = Nt;
 %% solve FOM
-[FOM] = solveDif(Nx,Nt,param,'train_mode',1);
+[FOM] = solveDif(Nx,Nt,param,'train_mode',0);
 plotSol(FOM,f.FOM); figure(f.FOM);
 %% PCA 2D-demo
 pcaDemo(f.pca2D);
@@ -131,4 +124,4 @@ plotComp(FOM,ROM.dd,param.D,f.rom.dd);
 %% seminar III DMD
 seminar3;
 %%
-% seminar_encoder;
+seminar_encoder;
