@@ -1,7 +1,7 @@
 %% startup
 clc;
-addpath(genpath('../../POD'));
-addpath(genpath('../'));
+addpath(genpath('../../../POD'));
+addpath(genpath('../../'));
 definitions;
 %% plots
 close all;
