@@ -168,16 +168,18 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
         end
         Arg = @(x)([X(:,1),x]);
         u1 = X(:,2);
-        %         if is_encoded
-        %             Arg = @(y)([X(:,1),POD.X.decode(y)]);
-        %             u1 = Y(:,2);
-        %         end
-        Fun = @(x)(Residual(Arg(x),dt,D,param,[],Nx));
         Jac= @(x)(Jacobian(Arg(x),dt,D,param,[],Nx));
+        if is_encoded
+            Arg = @(y)([X(:,1),POD.X.decode(y)]);
+            u1 = Y(:,2);
+            Jac= @(x)(Jacobian(Arg(x),dt,D,param,[],Nx)*POD.X.JD(x));
+        end
+        Fun = @(x) Residual(Arg(x),dt,D,param,[],Nx);
         
-        [u2,resid,k,build,solve] = newton_gauss(u1,Fun,Jac,crit_abs,kmax);
-        sol.timelog.bld = sol.timelog.bld + build;
-        sol.timelog.linsol = sol.timelog.linsol + solve;
+        
+        [u2,log] = newton_gauss(u1,Fun,Jac,crit_abs,kmax);
+        sol.timelog.bld = sol.timelog.bld + log.build;
+        sol.timelog.linsol = sol.timelog.linsol + log.solve;
         
         %% old Newton
 %         for k = 1:kmax
@@ -295,9 +297,11 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
 %             end
 %         end
         %% Convergency check
-        is_converged = resid < crit_abs;
+        is_converged = log.resid < crit_abs;
+        k = log.iters;
         if is_converged
-            X(:,2) = u2;
+            X = Arg(u2);
+%             X(:,2) = u2;
             if (is_encoded)
                 Y(:,2) = u2;
             end
@@ -394,7 +398,7 @@ function [out] = msg_add(is_fom)
     end
 end
 
-function [R]=Residual(X,dt,D,param,PODr,Nx)
+function [R,W]=Residual(X,dt,D,param,PODr,Nx)
     [Rt,W] = buildResidual(X,dt,D,param.bc,PODr);
     Rx = W(2:Nx+1)-W(1:Nx);
     R = Rt + Rx;
