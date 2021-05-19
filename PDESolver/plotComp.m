@@ -53,10 +53,10 @@ function [] = plotComp(sol_1,sol_2,D,fig)
     ylabel(sp5,'\Delta');
     title(sp5,'$$MSE(t)$$','interpreter','latex');
     
-    spd.all = FOM.timelog.overall / ROM.timelog.overall;
-    spd.lin =  FOM.timelog.linsol / ROM.timelog.linsol;
-    spd.bld =  FOM.timelog.bld / ROM.timelog.bld;
-    spd.iter =  ROM.timelog.iters.bld_avg;
+    spd.all = FOM.time.all / ROM.time.all;
+    spd.lin =  FOM.time.solve / ROM.time.solve;
+    spd.bld =  FOM.time.build / ROM.time.build;
+    spd.iter =  ROM.iters_avg;
     sms = ['ALL = ',num2str(spd.all),newline(),...
            'LIN = ',num2str(spd.lin),newline(),...
            'BLD = ',num2str(spd.bld),newline(),...
