@@ -165,12 +165,17 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             u1 = X(:,2);
             Proj = @(x)(speye(length(x)));
         end
-        Fun = @(x) Residual(Arg(x),dt,D,param,[],Nx);
-        Jac= @(x)(Jacobian(Arg(x),dt,D,param,[],Nx));
+        Fun = @(x) Residual(Arg(x),dt,D,param,PODr,Nx);
+        Jac= @(x)(Jacobian(Arg(x),dt,D,param,PODj,Nx));
 
         [argout_nlin] = newton_common(u1,Fun,Jac,kmax,crit_abs,crit_rel,Proj);
-        sol.nlin{nstep} = argout_nlin;
+        
         u2 = argout_nlin.result;
+        is_converged = argout_nlin.is_conv;
+        k = argout_nlin.iters;
+        
+        sol.nlin{nstep} = argout_nlin;
+        
         sol.time.build = sol.time.build + argout_nlin.build;
         sol.time.solve = sol.time.solve + argout_nlin.solve;
         sol.time.proj  = sol.time.proj + argout_nlin.proj;
@@ -291,8 +296,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
 %             end
 %         end
         %% Convergency check
-        is_converged = argout_nlin.is_conv;
-        k = argout_nlin.iters;
+        
         if is_converged
             X = Arg(u2);
 %             X(:,2) = u2;
@@ -335,7 +339,7 @@ function [sol] = solveDif(Nx,Nt,param,varargin)
             end
             if (dt < dt_min)
                 warning(['Not converged',newline(),...
-                    'Relative residual: ', num2str(delta/R0)]);
+                    'Relative residual: ', num2str(argout_nlin.error_gauss_relative)]);
                 break;
             end
             dt = dt/4;
