@@ -1,6 +1,13 @@
-function [Jx] = buildJacobian(Jf,N)
-    Jx = spalloc(N,N,3*N-2);
-    for i=1:N
+function [argout] = buildJacobian(X,dt,D,param,PODj)
+    Nx = size(X,1);
+    
+    % time derivative
+    Jt = speye(Nx)./dt;
+    
+    % spatial part
+    [Jf] = buildFlowJac(X,D,param.bc,PODj);
+    Jx = spalloc(Nx,Nx,3*Nx-2);
+    for i=1:Nx
         if i ~=1
             J1 = Jf(i,1);
             Jx(i,i-1) = -J1;
@@ -8,9 +15,14 @@ function [Jx] = buildJacobian(Jf,N)
         J1 = Jf(i,2);
         J2 = Jf(i+1,1);
         Jx(i,i) = J2 - J1;
-        if i ~= N
+        if i ~= Nx
             J2 = Jf(i+1,2);
             Jx(i,i+1) = J2;
         end
     end
+    
+    J = Jx + Jt;
+    
+    argout.value = J;
+    argout.Jf = Jf;
 end
