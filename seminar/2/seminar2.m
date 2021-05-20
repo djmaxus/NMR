@@ -132,6 +132,24 @@ ROM.ii.X = arg_2(ROM.ii.X);
 plotComp(FOM,ROM.ii,problem.param.D,f.rom.ii);
 figure(f.rom.ii);
 
+%% Adaptive FOM
+% FOM
+fom_res = @(x,dt) buildResidual(x,dt,problem.param);
+fom_jac = @(x,dt) buildJacobian(x,dt,problem.param);
+fom_dec_jac = @(x) speye(length(x));
+fom_nlin = nlin_solver;
+fom_nlin.eval = @(x,Res,Jac) newton_common(x,Res,Jac,nlin_solver.kmax,nlin_solver.crit_abs,nlin_solver.crit_rel,fom_dec_jac);
+% ROM-I    
+rom_dec     = @(y) POD.X.decode(y);
+rom_dec_jac = @(y) POD.X.JD(y) ;
+rom_res = @(x,dt) buildResidual(rom_dec(x),dt,problem.param);
+rom_jac = @(x,dt) buildJacobian(rom_dec(x),dt,problem.param);
+rom_nlin = nlin_solver;
+rom_nlin.eval = @(x,Res,Jac) newton_common(x,Res,Jac,nlin_solver.kmax,nlin_solver.crit_abs,nlin_solver.crit_rel,rom_dec_jac);
+% Adaptive 
+ada_res = @(is_rom) adaptive_fom(is_rom,fom_res,rom_res);
+ada_jac = @(is_rom) adaptive_fom(is_rom,fom_jac,rom_jac);
+ada_nlin = @(is_rom) adaptive_fom(is_rom,fom_jac,rom_jac);
 %% Data-driven approximation demo
 [parGrid] = getParGrid(vals,bc.val,f.grid);
 figure(f.grid);
@@ -168,3 +186,11 @@ plotComp(FOM,ROM.dd,problem.D,f.rom.dd);
 seminar3;
 %%
 seminar_encoder;
+
+function [fun] = adaptive_rom(is_rom,fom,rom)
+    if is_rom
+        fun = rom;
+    else
+        fun = fom;
+    end
+end
