@@ -1,11 +1,11 @@
-function [argout] = buildJacobian(X,dt,D,param,PODj)
+function [argout] = buildJacobian(X,dt,param,PODj)
     Nx = size(X,1);
     
     % time derivative
     Jt = speye(Nx)./dt;
     
     % spatial part
-    [Jf] = buildFlowJac(X,D,param.bc,PODj);
+    [Jf] = buildFlowJac(X,param.D,param.bc,PODj);
     Jx = spalloc(Nx,Nx,3*Nx-2);
     for i=1:Nx
         if i ~=1

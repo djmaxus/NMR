@@ -26,8 +26,8 @@ plotParSample(f.par,vals,bc.val);
 figure(f.par);
 
 %% prepare grid sequence
-NxMin = 1000;
-NxMax = 1000;
+NxMin = 2000;
+NxMax = 2000;
 NxCount = 1;
 grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 %% problem setup
@@ -35,19 +35,31 @@ grids = round(logspace(log10(NxMin),log10(NxMax),NxCount));
 iNx = NxCount;
 Nx = grids(iNx);
 % time
-Nt = 100;
 bc.kind = 1;
 D =  D_init(0.9,1,0.5e-1);
 x0 = setInit(Nx,0.5,2,1);
 source_term = q_init(0.6,1e+3);
-param = setProblem(Nx,bc,source_term,D,x0);
-param.grids = grids;
-param.vals = vals;
-param.Nx = Nx;
-param.Nt = Nt;
+problem = setProblem(Nx,bc,source_term,D,x0,@(x)(x));
+arg_jac = @(x) speye(length(x));
+
+%% time & timestep settings
+T = 1;
+Nt = 100;
+dt = T/Nt;
+
+%% nonlinear solver settings
+nlin_solver.kmax = 10;
+nlin_solver.kmin = 3;
+nlin_solver.crit_rel = 1e-3;
+nlin_solver.crit_abs = 1e-3;
+nlin_solver.eval = @(x,Res,Jac) newton_common(x,Res,Jac,kmax,crit_abs,crit_rel, arg_jac) ;
+
 %% solve FOM
-[FOM] = solveDif(Nx,Nt,param,'train_mode',0);
+clc;
+dt_lim = [dt,dt];
+[FOM] = solveDif(T,Nt,dt_lim,problem,nlin_solver);
 plotSol(FOM,f.FOM); figure(f.FOM);
+
 %% PCA 2D-demo
 pcaDemo(f.pca2D);
 figure(f.pca2D);
@@ -58,7 +70,7 @@ figure(f.pcaND_1);
 figure(f.pcaND_2);
 
 %% train or load ROM-I data
-[train.i] = genRom1(param);
+[train.i] = genRom1(problem);
 
 %% ROM-I train
 [POD.X] = truncRom1({FOM});
@@ -66,11 +78,22 @@ POD.X.plotSummary(f.pod.x);
 figure(f.pod.x);
 
 %% ROM-I test
-[ROM.i] = solveDif(Nx,Nt,param,'rom_stage',1,'encoder',POD);
-plotComp(FOM,ROM.i,param.D,f.rom.i);
+% problem
+arg_1     = @(y) POD.X.decode(y);
+arg_jac_1 = @(y) POD.X.JD(y) ;
+
+problem_rom_1 = setProblem(Nx,bc,source_term,D,x0,arg_1);
+problem_rom_1.x0 = POD.X.encode(problem_rom_1.x0);
+% nonlinear solvrer
+nlin_rom_1 = nlin_solver;
+nlin_rom_1.eval = @(x,Res,Jac)(newton_common(x,Res,Jac,kmax,crit_abs,crit_rel,arg_jac_1));
+% solve
+[ROM.i] = solveDif(T,Nt,[dt,dt],problem_rom_1,nlin_rom_1,'rom_stage',1,'encoder',POD);
+ROM.i.X = arg_1(ROM.i.X);
+plotComp(FOM,ROM.i,problem.param.D,f.rom.i);
 
 %% train or load ROM-II data
-[train.ii] = genRom2(param,POD);
+[train.ii] = genRom2(problem,POD);
 
 %% ROM-II train
 [POD,Rx,Jnz] = truncRom2(POD,{FOM});
@@ -80,9 +103,12 @@ POD.Jnz.plotSummary(f.pod.j); figure(f.pod.j);
 [POD] = approxRom2(POD,Rx,Jnz);
 
 %% ROM-II test
-[ROM.ii] = solveDif(Nx,Nt,param,'rom_stage',2,'encoder',POD);
-%%
-plotComp(FOM,ROM.ii,param.D,f.rom.ii);
+nfa_res.mask = POD.Rx.idx_mask;
+
+[ROM.ii] = solveDif(T,Nt,[dt,dt],problem_rom_1,nlin_rom_1,'rom_stage',2,'encoder',POD);
+ROM.ii.X = arg_1(ROM.ii.X);
+
+plotComp(FOM,ROM.ii,problem.param.D,f.rom.ii);
 figure(f.rom.ii);
 
 %% Data-driven approximation demo
@@ -93,8 +119,8 @@ figure(f.grid);
 %% ROM-III initial
 time_dd = tic;
 Yp = zeros(POD.X.npc(),length(nV));
-Ydd = zeros(POD.X.npc(),param.Nt + 1);
-for nt = 1:param.Nt+1
+Ydd = zeros(POD.X.npc(),problem.Nt + 1);
+for nt = 1:problem.Nt+1
     for i = 1:length(nV)
         ns = nV(i);
         Yp(:,i) = train.ii{ns}.Y(:,nt);
@@ -106,8 +132,8 @@ time_dd = toc(time_dd);
 
 
 %% ROM-III test
-[ROM.iii] = solveDif(Nx,Nt,param,'rom_stage',2,'encoder',POD,'dd_approx',Ydd);
-plotComp(FOM,ROM.iii,param.D,f.rom.iii);
+[ROM.iii] = solveDif(Nx,Nt,problem,'rom_stage',2,'encoder',POD,'dd_approx',Ydd);
+plotComp(FOM,ROM.iii,problem.D,f.rom.iii);
 figure(f.rom.iii);
 
 %% ROM-DD
@@ -116,7 +142,7 @@ ROM.dd.X = Xdd;
 ROM.dd.timelog.overall = time_dd;
 ROM.dd.name = 'ROM_{DD}';
 
-plotComp(FOM,ROM.dd,param.D,f.rom.dd);
+plotComp(FOM,ROM.dd,problem.D,f.rom.dd);
 %% seminar III DMD
 seminar3;
 %%
