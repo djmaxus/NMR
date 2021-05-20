@@ -1,4 +1,5 @@
-function [problem] = setProblem(Nx,bc,q,D,x0,arg)
+function [problem] = setProblem(Nx,bc,q,D,x0,name)
+    problem.name = name;
     % boundary conditions
     param.bc.first = bc.isKindI(bc.kind);
     param.bc.val = bc.val;
@@ -14,6 +15,6 @@ function [problem] = setProblem(Nx,bc,q,D,x0,arg)
     %% initial condition
     problem.x0 = x0;
     %% equations
-    problem.residual = @(x,dt,POD) buildResidual(arg(x),dt,problem.param,POD);
-    problem.jacobian = @(x,dt,POD) buildJacobian(arg(x),dt,problem.param,POD);
+    problem.residual = @(x,dt) buildResidual(x,dt,problem.param);
+    problem.jacobian = @(x,dt) buildJacobian(x,dt,problem.param);
 end

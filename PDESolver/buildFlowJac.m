@@ -1,12 +1,16 @@
-function [Jf] = buildFlowJac(X,D,bc,POD)
+function [Jf] = buildFlowJac(X,D,bc,varargin)
     N = size(X,1);
-    nmr = ~isempty(POD);
-
-    % gappy mask
-    mask = 1:N+1;
-    if nmr
-        mask = POD.idx_mask;
+    
+    if length(varargin) == 1
+        nfa = varargin{1};
+        mask = nfa.mask;
+        approx = @(f)(nfa.eval(f));
+    else
+        mask = 1:N+1;
+        approx = @(f)(f);
     end
+    
+    
     
     Jf = zeros(N+1,2);
     for i = mask
@@ -14,8 +18,6 @@ function [Jf] = buildFlowJac(X,D,bc,POD)
     end
     
     % gappy;
-    if nmr
-        Jf = applyOblique(Jf.*[1,-1],POD).*[1,-1];
-    end
+    Jf = approx(Jf);
 end
 

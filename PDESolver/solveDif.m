@@ -6,23 +6,11 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     sol.problem = problem;
     
     %% ROM mode processing
-    rom_stage = 0;
     adaptive_fom = false;
     is_step_fom = false;
-    POD = [];
-    Ydd = [];
     if length(varargin) >= 2
         while length(varargin) >=2
             varname = varargin{1};
-            if strcmp(varname,'rom_stage')
-                rom_stage = varargin{2};
-            end
-            if strcmp(varname,'encoder')
-                POD = varargin{2};
-            end
-            if strcmp(varname,'dd_approx')
-                Ydd = varargin{2};
-            end
             if strcmp(varname,'adaptive_fom')
                 adaptive_fom = varargin{2};
                 is_step_fom = true;
@@ -32,43 +20,6 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
             end
         end
     end
-    %% stage name
-    switch rom_stage
-        case 0
-            sol.name = 'FOM';
-        case 1
-            sol.name = 'ROM_{I}';
-        case 2
-            sol.name = 'ROM_{II}';
-        otherwise
-            sol.name = 'ROM';
-    end
-
-
-    %% encoding status
-    [is_encoded,is_gappy] = setRomStage(rom_stage);
-    if is_encoded
-        if isempty(POD)
-            error('Variable subspace POD.X required');
-        end
-        if isempty(POD.X)
-            error('Variable subspace POD.X required');
-        end
-    end
-    %% residual POD
-    if is_gappy
-        PODr = POD.Rx;
-        PODj = POD.Jnz;
-    else
-        PODr = [];
-        PODj = [];
-    end
-    dd_app = and(rom_stage > 0,~isempty(Ydd));
-
-    %
-    sol.is_encoded = is_encoded;
-    sol.is_gappy = is_gappy;
-    sol.dd_app = dd_app;
 
     %% problem statement
     % time settings
@@ -86,7 +37,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     sol.X(:,1) = x0;
 
     %% solution process
-    wb_msg = [sol.name,': step '];
+    wb_msg = [problem.name,': step '];
     wb = waitbar(t,wb_msg);
     nstep = 1;
     while t < T
@@ -94,17 +45,9 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
         
         % initial approximation
         X(:,2) = X(:,1);
-
-        if and(is_gappy,~is_step_fom)
-            PODr = POD.Rx;
-            PODj = POD.Jnz;
-        else
-            PODr = [];
-            PODj = [];
-        end
         
-        Fun = @(x) problem.residual([X(:,1),x],dt,PODr);
-        Jac = @(x) problem.jacobian([X(:,1),x],dt,PODj);
+        Fun = @(x) problem.residual([X(:,1),x],dt);
+        Jac = @(x) problem.jacobian([X(:,1),x],dt);
         
         % Nonlinear solver
         [argout_nlin] = nlin_solver.eval(X(:,2),Fun,Jac);
@@ -159,19 +102,6 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     sol.X(:,nstep+1:end) = [];
 
     delete(wb);
-end
-
-function [is_encoded,is_gappy] = setRomStage(rom_stage)
-    is_encoded = false;
-    is_gappy = false;
-
-    if rom_stage >= 1
-        is_encoded = true;
-    end
-    if rom_stage >= 2
-        is_gappy = true;
-    end
-
 end
 
 function [out] = msg_add(is_fom)

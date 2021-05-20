@@ -39,12 +39,12 @@ bc.kind = 1;
 D =  D_init(0.9,1,0.5e-1);
 x0 = setInit(Nx,0.5,2,1);
 source_term = q_init(0.6,1e+3);
-problem = setProblem(Nx,bc,source_term,D,x0,@(x)(x));
+problem = setProblem(Nx,bc,source_term,D,x0,'FOM');
 arg_jac = @(x) speye(length(x));
 
 %% time & timestep settings
 T = 1;
-Nt = 100;
+Nt = 200;
 dt = T/Nt;
 
 %% nonlinear solver settings
@@ -52,7 +52,7 @@ nlin_solver.kmax = 10;
 nlin_solver.kmin = 3;
 nlin_solver.crit_rel = 1e-3;
 nlin_solver.crit_abs = 1e-3;
-nlin_solver.eval = @(x,Res,Jac) newton_common(x,Res,Jac,kmax,crit_abs,crit_rel, arg_jac) ;
+nlin_solver.eval = @(x,Res,Jac) newton_common(x,Res,Jac,nlin_solver.kmax,nlin_solver.crit_abs,nlin_solver.crit_rel,arg_jac) ;
 
 %% solve FOM
 clc;
@@ -78,15 +78,16 @@ POD.X.plotSummary(f.pod.x);
 figure(f.pod.x);
 
 %% ROM-I test
-% problem
+% encoder
 arg_1     = @(y) POD.X.decode(y);
 arg_jac_1 = @(y) POD.X.JD(y) ;
-
-problem_rom_1 = setProblem(Nx,bc,source_term,D,x0,arg_1);
-problem_rom_1.x0 = POD.X.encode(problem_rom_1.x0);
-% nonlinear solvrer
+% problem
+problem_rom_1 = setProblem(Nx,bc,source_term,D,POD.X.encode(x0),'ROM-I');
+problem_rom_1.residual = @(x,dt) buildResidual(arg_1(x),dt,problem_rom_1.param);
+problem_rom_1.jacobian = @(x,dt) buildJacobian(arg_1(x),dt,problem_rom_1.param);
+% nonlinear solver
 nlin_rom_1 = nlin_solver;
-nlin_rom_1.eval = @(x,Res,Jac)(newton_common(x,Res,Jac,kmax,crit_abs,crit_rel,arg_jac_1));
+nlin_rom_1.eval = @(x,Res,Jac)(newton_common(x,Res,Jac,nlin_rom_1.kmax,nlin_rom_1.crit_abs,nlin_rom_1.crit_rel,arg_jac_1));
 % solve
 [ROM.i] = solveDif(T,Nt,[dt,dt],problem_rom_1,nlin_rom_1,'rom_stage',1,'encoder',POD);
 ROM.i.X = arg_1(ROM.i.X);
@@ -96,17 +97,37 @@ plotComp(FOM,ROM.i,problem.param.D,f.rom.i);
 [train.ii] = genRom2(problem,POD);
 
 %% ROM-II train
-[POD,Rx,Jnz] = truncRom2(POD,{FOM});
+[POD,Rx,Jnz] = truncRom2(POD,{ROM.i});
 POD.Rx.plotSummary(f.pod.r); figure(f.pod.r);
 POD.Jnz.plotSummary(f.pod.j); figure(f.pod.j);
 %% Gappy-POD train
 [POD] = approxRom2(POD,Rx,Jnz);
 
 %% ROM-II test
-nfa_res.mask = POD.Rx.idx_mask;
+% encoder
+arg_2    = @(y) POD.X.decode(y);
+arg_jac_2 = @(y) POD.X.JD(y);
 
-[ROM.ii] = solveDif(T,Nt,[dt,dt],problem_rom_1,nlin_rom_1,'rom_stage',2,'encoder',POD);
-ROM.ii.X = arg_1(ROM.ii.X);
+
+% Nonlinear Function Approximation
+nfa.res.mask = POD.Rx.idx_mask;
+nfa.res.eval = @(W)(applyOblique(W,POD.Rx));
+
+nfa.jac.mask = POD.Jnz.idx_mask;
+nfa.jac.eval = @(Jf)(applyOblique(Jf.*[1,-1],POD.Jnz).*[1,-1]);
+
+% problem
+problem_rom_2 = setProblem(Nx,bc,source_term,D,POD.X.encode(x0),'ROM-II');
+problem_rom_2.residual = @(x,dt) buildResidual(arg_2(x),dt,problem_rom_2.param,nfa.res);
+problem_rom_2.jacobian = @(x,dt) buildJacobian(arg_2(x),dt,problem_rom_2.param,nfa.jac);
+
+% nonlinear solvrer
+nlin_rom_2 = nlin_solver;
+nlin_rom_2.eval = @(x,Res,Jac)(newton_common(x,Res,Jac,nlin_rom_2.kmax,nlin_rom_2.crit_abs,nlin_rom_2.crit_rel,arg_jac_2));
+
+% solve
+[ROM.ii] = solveDif(T,Nt,[dt,dt],problem_rom_2,nlin_rom_2,'rom_stage',2,'encoder',POD);
+ROM.ii.X = arg_2(ROM.ii.X);
 
 plotComp(FOM,ROM.ii,problem.param.D,f.rom.ii);
 figure(f.rom.ii);

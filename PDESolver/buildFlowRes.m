@@ -1,21 +1,21 @@
-function [W] = buildFlowRes(X,D,bc,POD)
+function [W] = buildFlowRes(X,D,bc,varargin)
     N = size(X,1);
-    nmr = ~isempty(POD);
-
-    % mask for gappy-POD
-    mask = 1:N+1;
-    if nmr
-        mask = POD.idx_mask;
+    
+    if length(varargin) == 1
+        nfa = varargin{1};
+        mask = nfa.mask;
+        approx = @(f)(nfa.eval(f));
+    else
+        mask = 1:N+1;
+        approx = @(f)(f);
     end
+    
     
     % calculation
     W = zeros(N+1,1);
     for i = mask
         W(i) = calcFlowRes(X(:,2),D,bc,i);
-    end
-    
+    end    
     % gappy
-    if nmr
-        W = applyOblique(W,POD);
-    end 
+    W = approx(W);
 end
