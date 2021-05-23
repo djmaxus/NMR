@@ -53,7 +53,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
         
         % Nonlinear solver
         [argout_nlin] = nlin_solver.eval(X(:,2),Fun,Jac);
-        sol.nlin{nstep} = argout_nlin;
+        sol.nlin(nstep) = argout_nlin;
         
 
         %% Convergency check
@@ -102,7 +102,6 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
 
     sol.t(nstep+1:end) = [];
     sol.X(:,nstep+1:end) = [];
-    
     delete(wb);
 end
 
