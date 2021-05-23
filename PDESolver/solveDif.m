@@ -32,8 +32,8 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     X = [x0,x0];
 
     %% dataset initialization
-    sol.t = zeros(1,round(1/dt_min)+1);
-    sol.X = zeros(length(problem.x0),round(1/dt_min)+1);
+    sol.t = zeros(1,round(T/dt_min)+1);
+    sol.X = zeros(length(problem.x0),round(T/dt_min)+1);
     sol.X(:,1) = x0;
 
     %% solution process
@@ -42,7 +42,9 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     nstep = 1;
     while t < T
         dt = min(dt, T-t);
-        
+        if dt < 1e-16
+            break;
+        end
         % initial approximation
         X(:,2) = X(:,1);
         
@@ -82,7 +84,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
 
             % waitbar
             waitbar(t/1,wb,[wb_msg,msg_add(is_step_fom)]);
-        elseif argout_nlin.iters >= kmax
+        elseif argout_nlin.iters >= nlin_solver.kmax
             if adaptive_fom
                 if (~is_step_fom)
                     is_step_fom = true;
@@ -100,7 +102,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
 
     sol.t(nstep+1:end) = [];
     sol.X(:,nstep+1:end) = [];
-
+    
     delete(wb);
 end
 
