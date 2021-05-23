@@ -44,7 +44,7 @@ arg_jac = @(x) speye(length(x));
 
 %% time & timestep settings
 T = 1;
-Nt = 200;
+Nt = 100;
 dt = T/Nt;
 
 %% nonlinear solver settings
@@ -89,8 +89,9 @@ problem_rom_1.jacobian = @(x,dt) buildJacobian(arg_1(x),dt,problem_rom_1.param);
 nlin_rom_1 = nlin_solver;
 nlin_rom_1.eval = @(x,Res,Jac)(newton_common(x,Res,Jac,nlin_rom_1.kmax,nlin_rom_1.crit_abs,nlin_rom_1.crit_rel,arg_jac_1));
 % solve
-[ROM.i] = solveDif(T,Nt,[dt,dt],problem_rom_1,nlin_rom_1,'rom_stage',1,'encoder',POD);
+[ROM.i] = solveDif(T,Nt,[dt,dt],problem_rom_1,nlin_rom_1);
 ROM.i.X = arg_1(ROM.i.X);
+% plot
 plotComp(FOM,ROM.i,problem.param.D,f.rom.i);
 
 %% train or load ROM-II data
@@ -126,13 +127,13 @@ nlin_rom_2 = nlin_solver;
 nlin_rom_2.eval = @(x,Res,Jac)(newton_common(x,Res,Jac,nlin_rom_2.kmax,nlin_rom_2.crit_abs,nlin_rom_2.crit_rel,arg_jac_2));
 
 % solve
-[ROM.ii] = solveDif(T,Nt,[dt,dt],problem_rom_2,nlin_rom_2,'rom_stage',2,'encoder',POD);
+[ROM.ii] = solveDif(T,Nt,[dt,dt],problem_rom_2,nlin_rom_2);
 ROM.ii.X = arg_2(ROM.ii.X);
 
 plotComp(FOM,ROM.ii,problem.param.D,f.rom.ii);
 figure(f.rom.ii);
 
-%% Adaptive FOM
+%% Adaptive FOM prepare
 % FOM
 fom_res = @(x,dt) buildResidual(x,dt,problem.param);
 fom_jac = @(x,dt) buildJacobian(x,dt,problem.param);
@@ -150,6 +151,25 @@ rom_nlin.eval = @(x,Res,Jac) newton_common(x,Res,Jac,nlin_solver.kmax,nlin_solve
 ada_res = @(is_rom) adaptive_fom(is_rom,fom_res,rom_res);
 ada_jac = @(is_rom) adaptive_fom(is_rom,fom_jac,rom_jac);
 ada_nlin = @(is_rom) adaptive_fom(is_rom,fom_jac,rom_jac);
+
+%% Adaptive FOM solve
+fom_problem = problem;
+fom_problem.residual = fom_res;
+fom_problem.jacobian = fom_jac;
+clc;
+[ADA.FOM] = solveDif(dt*10,10,[dt,dt],problem,nlin_solver);
+%% Adaptive ROM solve
+rom_problem = problem;
+rom_problem.residual = rom_res;
+rom_problem.jacobian = rom_jac;
+rom_problem.x0 = POD.X.encode(ADA.FOM.X(:,end));
+clc;
+[ADA.ROM] = solveDif(T-dt*10,Nt-10,[dt,dt],rom_problem,rom_nlin);
+%% ADA all
+ADA.all = ADA.FOM;
+ADA.all.t = [ADA.FOM.t,(ADA.ROM.t(2:end)+ ADA.FOM.t(end))];
+ADA.all.X = [ADA.FOM.X, POD.X.decode(ADA.ROM.X(:,2:end))];
+plotComp(FOM,ADA.all,problem.param.D,f.FOM);
 %% Data-driven approximation demo
 [parGrid] = getParGrid(vals,bc.val,f.grid);
 figure(f.grid);
