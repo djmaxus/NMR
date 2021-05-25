@@ -6,20 +6,20 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     sol.problem = problem;
     
     %% ROM mode processing
-    adaptive_fom = false;
-    is_step_fom = false;
-    if length(varargin) >= 2
-        while length(varargin) >=2
-            varname = varargin{1};
-            if strcmp(varname,'adaptive_fom')
-                adaptive_fom = varargin{2};
-                is_step_fom = true;
-            end
-            for i = 1:2
-                varargin(1) = [];
-            end
-        end
-    end
+%     adaptive_fom = false;
+%     is_step_fom = false;
+%     if length(varargin) >= 2
+%         while length(varargin) >=2
+%             varname = varargin{1};
+%             if strcmp(varname,'adaptive_fom')
+%                 adaptive_fom = varargin{2};
+%                 is_step_fom = true;
+%             end
+%             for i = 1:2
+%                 varargin(1) = [];
+%             end
+%         end
+%     end
 
     %% problem statement
     % time settings
@@ -37,7 +37,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     sol.X(:,1) = x0;
 
     %% solution process
-    wb_msg = [problem.name,': step '];
+    wb_msg = ['Solving ODE named ',problem.name];
     wb = waitbar(t,wb_msg);
     nstep = 1;
     while t < T
@@ -74,23 +74,23 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
             end
             
             % step type update
-            if and(is_step_fom,dt >= 1/Nt)
-                is_step_fom = false;
-            end
+%             if and(is_step_fom,dt >= 1/Nt)
+%                 is_step_fom = false;
+%             end
             
             % log
             sol.X(:,nstep) = X(:,2);
             sol.t(nstep) = t;
 
             % waitbar
-            waitbar(t/1,wb,[wb_msg,msg_add(is_step_fom)]);
+            waitbar(t/T,wb,wb_msg);
         elseif argout_nlin.iters >= nlin_solver.kmax
-            if adaptive_fom
-                if (~is_step_fom)
-                    is_step_fom = true;
-                    continue;
-                end
-            end
+%             if adaptive_fom
+%                 if (~is_step_fom)
+%                     is_step_fom = true;
+%                     continue;
+%                 end
+%             end
             if (dt < dt_min)
                 warning(['Not converged',newline(),...
                     'Relative residual: ', num2str(argout_nlin.error_gauss_relative)]);
@@ -105,10 +105,10 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
     delete(wb);
 end
 
-function [out] = msg_add(is_fom)
-    if is_fom
-        out = 'FOM';
-    else
-        out = 'DEF';
-    end
-end
+% function [out] = msg_add(is_fom)
+%     if is_fom
+%         out = 'FOM';
+%     else
+%         out = 'DEF';
+%     end
+% end
