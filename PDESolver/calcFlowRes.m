@@ -1,6 +1,6 @@
 function [R] = calcFlowRes(X,D,bc,i)
     N = length(X);
-    if bc.first
+    if bc.kind == 1
         if i==1
             delta = [X( i ),bc.val(1)];
         elseif i==N+1

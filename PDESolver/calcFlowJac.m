@@ -1,7 +1,7 @@
 function [J] = calcFlowJac(X,D,bc,i,rj)
     N = length(X);
     J = zeros(2,1);
-    if bc.first
+    if bc.kind == 1
         if i==1
             delta = [bc.val(1),X(i)];
         elseif i==N+1
