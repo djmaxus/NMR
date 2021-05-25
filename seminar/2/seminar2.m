@@ -206,11 +206,3 @@ plotComp(FOM,ROM.dd,problem.D,f.rom.dd);
 seminar3;
 %%
 seminar_encoder;
-
-function [fun] = adaptive_rom(is_rom,fom,rom)
-    if is_rom
-        fun = rom;
-    else
-        fun = fom;
-    end
-end
