@@ -1,4 +1,4 @@
-function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver,varargin)
+function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     
