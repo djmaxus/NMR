@@ -52,7 +52,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver)
         Jac = @(x) problem.jacobian([X(:,1),x],dt);
         
         % Nonlinear solver
-        [argout_nlin] = nlin_solver.eval(X(:,2),Fun,Jac);
+        [argout_nlin] = nlin_solver(X(:,2),Fun,Jac);
         sol.nlin(nstep) = argout_nlin;
         
 
@@ -68,7 +68,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver)
             t = t+dt;
             
             % timestep increase
-            if argout_nlin.iters <= nlin_solver.kmin
+            if argout_nlin.iters <= argout_nlin.param.iters_min
                 dt =  dt * 2;
                 dt = min(dt,dt_max);
             end
@@ -84,7 +84,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver)
 
             % waitbar
             waitbar(t/T,wb,wb_msg);
-        elseif argout_nlin.iters >= nlin_solver.kmax
+        elseif argout_nlin.iters >= argout_nlin.param.iters
 %             if adaptive_fom
 %                 if (~is_step_fom)
 %                     is_step_fom = true;
