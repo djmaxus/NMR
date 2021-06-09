@@ -2,7 +2,7 @@ function [D] = genDiffusion(Nx,amp,per,scale,varargin)
     %SETDIFF Summary of this function goes here
     %   Detailed explanation goes here
     if length(varargin) == 1
-        D.model = model;
+        D.model = varargin{1};
     else
         D.model = @(u)([max(u.^2,0)+1,max(2*u,0)]);
     end
