@@ -63,11 +63,11 @@ p = -qval * p;
 dX = zeros(size(exact.X));
 for n = 1:length(t)
     time = exp(-S*t(n));
-    a = a0 .* time + S_inv .* p .* (1-time);
+    a = a0 .* time + p .* S_inv .* (1-time);
     dX(:,n) = U * a;
 end
 exact.X = dX;
-% plotSol(exact,figure);
+plotSol(exact,figure);
 plotComp(exact, problem.sol, D, figure());
 %% another problem
 problem_1 = genProblem('FOM-1',Nx,genParam(D,bc,genSource(Nx,0.598,1e+3)),x0);
