@@ -48,9 +48,12 @@ plotComp(exact, problem.sol, D, figure());
 
 %% try DMDc
 X = exact.X;
-dX = diff(X,1,2);
+dX = diff(X,1,2)./dt;
 Q = repmat(-full(problem.param.q.val),1,Nt);
-[A,B] = DMDc(X(:,2:end),dX,Q);
+[A,U,S] = dmds(X(:,2:end),dX-Q,23);
+dmded = problem.sol;
+dmded.X = calcGreenODE(-A,x0,problem.sol.t,-problem.param.q.val,23);
+plotComp(dmded, exact, D, figure());
 
 %% another problem
 problem_1 = genProblem('FOM-1',Nx,genParam(D,bc,genSource(Nx,0.5,1e+3)),x0);
