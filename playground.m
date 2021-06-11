@@ -41,57 +41,49 @@ plotSol(problem.sol, figure);
 J = buildJacobian(zeros(Nx,2),1,problem.param);
 % u_t + Jx * u = q
 Jx = full(J.Jx); % symmetric
-% spectrum
-[U,S,~] = svd(Jx); S = diag(S);
-% inverse
-S_inv = 1./S;
-L_inv = U * diag(S_inv) * U';
-Lp_inv = diag(1./S) * U';
-% exact solution
-thres = 1e-6; % sparse threshold
-pos = problem.param.q.pos;
-qval = problem.param.q.val(pos);
-t = problem.sol.t;
-a0 = U' * x0;
-a0(abs(a0) < thres) = 0;
+% evaluate
 exact = problem.sol;
-% forced term
-p = U';
-p = p(:,pos);
-p(abs(p) < thres) = 0;
-p = -qval * p;
-dX = zeros(size(exact.X));
-for n = 1:length(t)
-    time = exp(-S*t(n));
-    a = a0 .* time + p .* S_inv .* (1-time);
-    dX(:,n) = U * a;
-end
-exact.X = dX;
-plotSol(exact,figure);
+exact.X = calcGreenODE(Jx,x0,problem.sol.t,-problem.param.q.val);
 plotComp(exact, problem.sol, D, figure());
+
+%% try DMDc
+X = exact.X;
+dX = diff(X,1,2);
+Q = repmat(-full(problem.param.q.val),1,Nt);
+[A,B] = DMDc(X(:,2:end),dX,Q);
+
 %% another problem
-problem_1 = genProblem('FOM-1',Nx,genParam(D,bc,genSource(Nx,0.598,1e+3)),x0);
+problem_1 = genProblem('FOM-1',Nx,genParam(D,bc,genSource(Nx,0.5,1e+3)),x0);
 [problem_1.sol] = solveDif(T,Nt,[dt,dt],problem_1,nlin_solver);
-%%
 close all;
 plotComp(problem_1.sol,problem.sol,param.D,figure);
 
+%% distributed source
+q.val = zeros(Nx,1);
+a = 1e+3;
+for i = (500-5):(500+5)
+    q.val(i) = a * exp(-(i-500)^2);
+end
+problem_2 = genProblem('FOM-2',Nx,genParam(D,bc,q),x0);
+[problem_2.sol] = solveDif(T,Nt,[dt,dt],problem_2,nlin_solver);
+close all;
+plotComp(problem_2.sol,problem_1.sol,param.D,figure);
+
 %% build aDMDc
-[X1,X2] = mergeForDMD(problem.sol.X,problem_1.sol.X);
+[X1,X2] = mergeForDMD(problem.sol.X,problem_1.sol.X,problem_2.sol.X);
 Qa = full(repmat(problem.param.q.val,1,length(problem.sol.t)));
 Qb = full(repmat(problem_1.param.q.val,1,length(problem_1.sol.t)));
-[Q1,Q2] = mergeForDMD(Qa,Qb);
-[A,B,C] = aDMDc(X1,X2,Q1,Q2);
+Qc = full(repmat(problem_2.param.q.val,1,length(problem_2.sol.t)));
+[Q1,Q2] = mergeForDMD(Qa,Qb,Qc);
+[A,B] = DMDc(X1,X2,Q1);
 [Psi,Lambda] = eigs(A,size(X1,2));
 Lambda = diag(Lambda);
 
-B(:,599) = 0.5*(B(:,598)+B(:,600));
-C(:,599) = 0.5*(C(:,598)+C(:,600));
 %% approximate of problem_1
-
 X = x0;
+q_test = genSource(Nx,0.499,1e+2);
 for i = 1:Nt
-    x = A*X(:,end) + B*problem_1.param.q.val + C*problem_1.param.q.val;
+    x = A*X(:,end) + (B)*q_test.val;
     X = [X,x];
 end
 approx = problem_1.sol;
