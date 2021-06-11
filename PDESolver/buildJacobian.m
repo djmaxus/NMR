@@ -25,4 +25,5 @@ function [argout] = buildJacobian(X,dt,param,varargin)
     
     argout.value = J;
     argout.Jf = Jf;
+    argout.Jx = Jx;
 end
