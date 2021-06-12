@@ -3,9 +3,9 @@ function [J] = calcFlowJac(X,D,bc,i,rj)
     J = zeros(2,1);
     if bc.kind == 1
         if i==1
-            delta = [bc.val(1),X(i)];
+            delta = [bc.state(1,2),X(i)];
         elseif i==N+1
-            delta = [X( i - 1 ),bc.val(2)];
+            delta = [X( i - 1 ),bc.state(2,2)];
         else
             delta = [X( i-1 ),X( i )];
         end
@@ -15,13 +15,13 @@ function [J] = calcFlowJac(X,D,bc,i,rj)
         for j = rj
             x_dx = mult(2)*eq(imax,j);
             d_dx = eq( j, 2 ) - eq( j, 1 );
-            if i == 1
-                x_dx = x_dx * ne(imax,1);
-                d_dx = d_dx * ne(j,1);
-            elseif i == N+1
-                x_dx = x_dx * ne(imax,2);
-                d_dx = d_dx * ne(j,2);
-            end
+%             if i == 1
+%                 x_dx = x_dx * ne(imax,1);
+%                 d_dx = d_dx * ne(j,1);
+%             elseif i == N+1
+%                 x_dx = x_dx * ne(imax,2);
+%                 d_dx = d_dx * ne(j,2);
+%             end
             J( j ) = -D.val( i ) * (x_dx * (delta( 2 ) - delta(1)) + mult(1) * d_dx);
         end
     else

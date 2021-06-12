@@ -1,8 +1,10 @@
+%% preset
+fig = new_figure('Result');
 %% set problem
 % dimensionality
 Nx = 1000;
 % BC
-bc = genBC(1,[0,0]);
+bc = genBC(1,[-0.5,-0.5]);
 % diffusion
 D = genDiffusion(Nx,0.9,1,0.5e-1,@(u)([1,0]));
 % source term
@@ -32,19 +34,19 @@ Nt = 100;
 dt = T/Nt;
 
 %% Solve problem numerically
+clc;
 [problem.sol] = solveDif(T,Nt,[dt,dt],problem,nlin_solver);
-close all;
-plotSol(problem.sol, figure);
-
+plotSol(problem.sol, fig); fig;
 %% Analytical solution
 % generate linear matrix
 J = buildJacobian(zeros(Nx,2),1,problem.param);
 % u_t + Jx * u = q
-Jx = full(J.Jx); % symmetric
+Jx = full([J.Jx,J.Jxb;zeros(2,Nx+2)]);
 % evaluate
 exact = problem.sol;
-exact.X = calcGreenODE(Jx,x0,problem.sol.t,-problem.param.q.val);
-plotComp(exact, problem.sol, D, figure());
+X = calcGreenODE(Jx,[x0;bc.state(:,2)],problem.sol.t,-[problem.param.q.val;0;0]);
+exact.X = X(1:end-2,:);
+plotComp(exact, problem.sol, D, fig); fig;
 
 %% try DMDc
 X = exact.X;
@@ -53,13 +55,12 @@ Q = repmat(-full(problem.param.q.val),1,Nt);
 [A,U,S] = dmds(X(:,2:end),dX-Q,23);
 dmded = problem.sol;
 dmded.X = calcGreenODE(-A,x0,problem.sol.t,-problem.param.q.val,23);
-plotComp(dmded, exact, D, figure());
+plotComp(dmded, exact, D, fig); fig;
 
 %% another problem
 problem_1 = genProblem('FOM-1',Nx,genParam(D,bc,genSource(Nx,0.5,1e+3)),x0);
 [problem_1.sol] = solveDif(T,Nt,[dt,dt],problem_1,nlin_solver);
-close all;
-plotComp(problem_1.sol,problem.sol,param.D,figure);
+plotComp(problem_1.sol,problem.sol,param.D,fig);fig;
 
 %% distributed source
 q.val = zeros(Nx,1);
@@ -69,8 +70,7 @@ for i = (500-5):(500+5)
 end
 problem_2 = genProblem('FOM-2',Nx,genParam(D,bc,q),x0);
 [problem_2.sol] = solveDif(T,Nt,[dt,dt],problem_2,nlin_solver);
-close all;
-plotComp(problem_2.sol,problem_1.sol,param.D,figure);
+plotComp(problem_2.sol,problem_1.sol,param.D,fig); fig;
 
 %% build aDMDc
 [X1,X2] = mergeForDMD(problem.sol.X,problem_1.sol.X,problem_2.sol.X);
@@ -91,4 +91,4 @@ for i = 1:Nt
 end
 approx = problem_1.sol;
 approx.X = X;
-plotComp(approx,problem_1.sol,param.D,figure);
+plotComp(approx,problem_1.sol,param.D,fig); fig;

@@ -11,7 +11,11 @@ function [argout]=buildResidual(X,dt,param,varargin)
     % source term
     Rs = param.q.val;
     R = Rt + Rx + Rs;
-
+    
+    % boundary law
+    Rb = param.bc.resid(param.bc.state,X,dt,param);
+    
+    % output
     argout.value = R;
     argout.W = W;
 end

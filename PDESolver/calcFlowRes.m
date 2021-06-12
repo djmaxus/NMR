@@ -2,9 +2,9 @@ function [R] = calcFlowRes(X,D,bc,i)
     N = length(X);
     if bc.kind == 1
         if i==1
-            delta = [X( i ),bc.val(1)];
+            delta = [X( i ),bc.state(1,2)];
         elseif i==N+1
-            delta = [bc.val(2), X( i - 1 )];
+            delta = [bc.state(2,2), X( i - 1 )];
         else
             delta = [X( i ),X( i - 1)];
         end
