@@ -55,6 +55,7 @@ Q = repmat(-full(problem.param.q.val),1,Nt);
 [A,U,S] = dmds(X(:,2:end),dX-Q,23);
 dmded = problem.sol;
 dmded.X = calcGreenODE(-A,x0,problem.sol.t,-problem.param.q.val,23);
+dmded.X = real(dmded.X);
 plotComp(dmded, exact, D, fig); fig;
 
 %% another problem
