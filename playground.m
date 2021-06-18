@@ -1,5 +1,5 @@
-%% preset
-fig = new_figure('Result');
+
+
 %% set problem
 % dimensionality
 Nx = 1000;
@@ -37,6 +37,7 @@ dt = T/Nt;
 clc;
 [problem.sol] = solveDif(T,Nt,[dt,dt],problem,nlin_solver);
 plotSol(problem.sol, fig); fig;
+
 %% Analytical solution
 % generate linear matrix
 J = buildJacobian(zeros(Nx,2),1,problem.param);
@@ -63,33 +64,50 @@ problem_1 = genProblem('FOM-1',Nx,genParam(D,bc,genSource(Nx,0.5,1e+3)),x0);
 [problem_1.sol] = solveDif(T,Nt,[dt,dt],problem_1,nlin_solver);
 plotComp(problem_1.sol,problem.sol,param.D,fig);fig;
 
-%% distributed source
-q.val = zeros(Nx,1);
-a = 1e+3;
-for i = (500-5):(500+5)
-    q.val(i) = a * exp(-(i-500)^2);
-end
-problem_2 = genProblem('FOM-2',Nx,genParam(D,bc,q),x0);
-[problem_2.sol] = solveDif(T,Nt,[dt,dt],problem_2,nlin_solver);
-plotComp(problem_2.sol,problem_1.sol,param.D,fig); fig;
+%% study
+clc;
+fig = new_figure('Result');
+disp('Study start');
 
-%% build aDMDc
-[X1,X2] = mergeForDMD(problem.sol.X,problem_1.sol.X,problem_2.sol.X);
-Qa = full(repmat(problem.param.q.val,1,length(problem.sol.t)));
-Qb = full(repmat(problem_1.param.q.val,1,length(problem_1.sol.t)));
-Qc = full(repmat(problem_2.param.q.val,1,length(problem_2.sol.t)));
-[Q1,Q2] = mergeForDMD(Qa,Qb,Qc);
-[A,B] = DMDc(X1,X2,Q1);
-[Psi,Lambda] = eigs(A,size(X1,2));
-Lambda = diag(Lambda);
+%% common parameters for all problems
+Nx = 1000;                                      % dimensionality
+bc = genBC(1,[0,0]);                            % boundary
+D  = genDiffusion(Nx,0.9,1,0.5e-1,@(u)([1,0])); % diffusion
+x0 = genInit(Nx,0.5,2,1);                       % initial state
 
-%% approximate of problem_1
-X = x0;
-q_test = genSource(Nx,0.499,1e+2);
-for i = 1:Nt
-    x = A*X(:,end) + (B)*q_test.val;
-    X = [X,x];
-end
-approx = problem_1.sol;
-approx.X = X;
-plotComp(approx,problem_1.sol,param.D,fig); fig;
+makeProblem = @(q,name) genProblem(name,Nx,genParam(D,bc,q),x0); % constructor
+
+%% ODE settings
+T = 1;
+Nt = 100;
+dt = T/Nt;
+
+%% nonlinear solvers
+newton_param = struct(...
+    'iters'    , 10,...
+    'iters_min', 3,...
+    'tol'      , 1e-3,...
+    'tol_rel'  , 1e-3,...
+    'tol_g'    , 1e-3,...
+    'tol_rel_g', 1e-3 ...
+    );
+
+nlin_newton = @(x,Res,Jac) newton      (x,Res,Jac,newton_param);
+nlin_gauss  = @(x,Res,Jac) newton_gauss(x,Res,Jac,newton_param);
+%% train set
+train.q = genSource(Nx,0.6,1e+3);                         % specific property
+    % FOM
+    train.FOM = makeProblem(train.q,'FOM');               % setup
+    train.FOM.sol = solveDif(T,Nt,train.FOM,nlin_newton); % solve
+    plotSol(train.FOM.sol, fig); fig;                     % plot
+    % ROM-I
+    % ROM-II
+
+%% test set
+    % FOM
+    % ROM-I
+    % ROM-II
+% hypothesis #1 : build ROM-1 via DMD
+% hypothesis #2 : build ROM-1 via SPT
+
+
