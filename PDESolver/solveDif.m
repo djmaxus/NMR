@@ -1,9 +1,6 @@
-function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver)
+function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
-    
-    % Parameter save
-    sol.problem = problem;
     
     %% ROM mode processing
 %     adaptive_fom = false;
@@ -21,12 +18,22 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver)
 %         end
 %     end
 
-    %% problem statement
-    % time settings
+    %% Parameter save
+    sol.problem = problem;
+    
+    %% timestep evaluation
     t = 0;
     dt = T/Nt;
-    dt_min = dt_lim(1);
-    dt_max = dt_lim(2);
+    
+    %%  dynamic timestep
+    if length(varargin) == 1
+        dt_lim = varargin{1};
+        dt_min = dt_lim(1);
+        dt_max = dt_lim(2);
+    else
+        dt_min = dt;
+        dt_max = dt;
+    end
     %% initial condition
     x0 = problem.x0;
     X = [x0,x0];
@@ -38,7 +45,7 @@ function [sol] = solveDif(T,Nt,dt_lim,problem,nlin_solver)
 
     %% solution process
     wb_msg = ['Solving ODE named ',problem.name];
-    wb = waitbar(t,wb_msg);
+    wb = waitbar(t,wb_msg,'WindowStyle','modal');
     nstep = 1;
     while t < T
         dt = min(dt, T-t);
