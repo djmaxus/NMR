@@ -35,7 +35,7 @@ dt = T/Nt;
 
 %% Solve problem numerically
 clc;
-[problem.sol] = solveDif(T,Nt,[dt,dt],problem,nlin_solver);
+[problem.sol] = solveDif(T,Nt,problem,nlin_solver);
 plotSol(problem.sol, fig); fig;
 
 %% Analytical solution
@@ -97,7 +97,7 @@ nlin_gauss  = @(x,Res,Jac) newton_gauss(x,Res,Jac,newton_param);
 %% train set
 train.q = genSource(Nx,0.6,1e+3);                         % specific property
     % FOM
-    train.FOM = makeProblem(train.q,'FOM');               % setup
+    train.FOM = makeProblem(train.q,'train.FOM');               % setup
     train.FOM.sol = solveDif(T,Nt,train.FOM,nlin_newton); % solve
     plotSol(train.FOM.sol, fig); fig;                     % plot
     % ROM-I
