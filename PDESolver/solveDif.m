@@ -44,7 +44,7 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
     sol.X(:,1) = x0;
 
     %% solution process
-    wb_msg = ['Solving ODE named ',problem.name];
+    wb_msg = ['Solving ODE: ',problem.name];
     wb = waitbar(t,wb_msg,'WindowStyle','modal');
     nstep = 1;
     while t < T
