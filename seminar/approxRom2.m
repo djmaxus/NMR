@@ -3,7 +3,7 @@ function [POD] = approxRom2(POD,R,J)
     %   Detailed explanation goes here
     %% Res POD + greedy
     nR = round(size(R,1)*0.01);
-    nR = max(nR,POD.Rx.npc());
+    nR = max(nR,round(POD.Rx.npc()*1.5));
 %     nR = round(POD.Rx.npc()*(1+add_frac));
     [~,mask_R] = greedy(POD.Rx.u(:,1:POD.Rx.npc()),nR);
     

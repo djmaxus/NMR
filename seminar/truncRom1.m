@@ -6,6 +6,6 @@ function [POD] = truncRom1(train)
         X = [X,train{i}.X];
     end
     x0 = X(:,1);
-    POD = PCA(X,0.99,'init',x0,'sval_deg',1);
+    POD = PCA(X,0.99,'init',x0);
 end
 

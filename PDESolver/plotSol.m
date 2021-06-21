@@ -21,7 +21,7 @@ function [] = plotSol(where,sol)
         title(sp1,ttl,'interpreter','latex');
         %% diffusion
 
-        plot(sp2,(0:Nx)./(Nx+1),sol.D.val);
+        plot(sp2,(0:Nx)./(Nx+1),sol.problem.param.D.val);
         xlabel(sp2,'$x$','interpreter','latex');
         ylabel(sp2,'$D_0$','interpreter','latex');
         ttl = '$D_0(x)$';
