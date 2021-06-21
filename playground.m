@@ -75,7 +75,10 @@ bc = genBC(1,[0,0]);                            % boundary
 D  = genDiffusion(Nx,0.9,1,0.5e-1,@(u)([1,0])); % diffusion
 x0 = genInit(Nx,0.5,2,1);                       % initial state
 
-makeProblem = @(q,name) genProblem(name,Nx,genParam(D,bc,q),x0); % constructor
+%% Problem Constructors
+makeFOM = @(q,name) genProblem(name,Nx,genParam(D,bc,q),x0);
+makeROM_I = @(name,q,encoder) genProblem(name,Nx,genParam(D,bc,q),x0,encoder);
+makeROM_II = @(name,q,encoder,nfa) genProblem(name,Nx,genParam(D,bc,q),x0,encoder,nfa.res,nfa.jac);
 
 %% ODE settings
 T = 1;
@@ -94,20 +97,74 @@ newton_param = struct(...
 
 nlin_newton = @(x,Res,Jac) newton      (x,Res,Jac,newton_param);
 nlin_gauss  = @(x,Res,Jac) newton_gauss(x,Res,Jac,newton_param);
+
 %% train set
 train.q = genSource(Nx,0.6,1e+3);                         % specific property
-    % FOM
-    train.FOM = makeProblem(train.q,'train.FOM');               % setup
+    %% FOM
+    train.FOM = makeFOM(train.q,'train.FOM');             % setup
     train.FOM.sol = solveDif(T,Nt,train.FOM,nlin_newton); % solve
-    plotSol(train.FOM.sol, fig); fig;                     % plot
-    % ROM-I
-    % ROM-II
-
+    plotSol(fig,train.FOM.sol);                           % plot
+    
+    %% ROM-I
+    % Encoder
+    train.pod = PCA(train.FOM.sol.X,0.99,'init',x0,'sval_deg',1);
+    train.encoder = train.pod.genEncoder();
+    % Problem
+    train.ROM.I = makeROM_I('train.ROM-I',train.q,train.encoder);
+    train.ROM.nlin = @(x,Res,Jac) newton_gauss(x,Res,Jac,newton_param,train.encoder.decjac);
+    % Solution
+    train.ROM.I.sol = solveDif(T,Nt,train.ROM.I,train.ROM.nlin); % solve
+    train.ROM.I.sol.X = train.encoder.decode(train.ROM.I.sol.X); % decode solution
+    plotComp(fig,train.FOM.sol,train.ROM.I.sol);                 % plot
+    
+    %% ROM-II
+    % Collect data
+    [train.W,train.Jw] = collectNonlinData(train.FOM.sol);
+    % Make POD
+    N1 = floor(train.pod.npc() * 1.5);
+    train.gappy.R = PCA(train.W,N1,'init',zeros(Nx+1,1));
+    train.gappy.J = PCA(train.Jw,N1,'init',zeros(Nx+1,1));
+    % Set masks
+    N2 =floor(N1*1.5);
+    idx = unique([train.gappy.R.calcGreedy(N2),...
+                  train.gappy.J.calcGreedy(N2)]);
+              
+    train.gappy.R = train.gappy.R.buildGappy(idx);
+    train.gappy.J = train.gappy.J.buildGappy(idx);
+    
+    train.nfa.res = train.gappy.R.genNFA();
+    train.nfa.jac = train.gappy.J.genNFA();
+    
+    train.ROM.II = makeROM_II('ROM-II',train.q,train.encoder,train.nfa);
+    train.ROM.II.sol = solveDif(T,Nt,train.ROM.II,train.ROM.nlin); % solve
+    train.ROM.II.sol.X = train.encoder.decode(train.ROM.II.sol.X); % decode solution
+    plotComp(fig,train.FOM.sol,train.ROM.II.sol);  
 %% test set
+test.q = genSource(Nx,0.55,1e+3);                       % specific property
     % FOM
+    test.FOM = makeFOM(test.q,'test.FOM');          % setup
+    test.FOM.sol = solveDif(T,Nt,test.FOM,nlin_newton); % solve
+    plotComp(fig, train.FOM.sol, test.FOM.sol);                         % plot
     % ROM-I
     % ROM-II
-% hypothesis #1 : build ROM-1 via DMD
-% hypothesis #2 : build ROM-1 via SPT
+    
+%% Hypothesis
+    % hypothesis #1 : build ROM-1 via DMD
+    % hypothesis #2 : build ROM-1 via SPT
 
+%% Comparison
+plotComp(fig,train.FOM.sol,test.FOM.sol);
 
+%% Collect ROM-II data
+function [W,Jw] = collectNonlinData(sol)
+    W = [];
+    Jw = [];
+    for nlin = sol.nlin
+        for res = nlin.residual
+            W = [W,res.W];
+        end
+        for jac = nlin.jacobian
+            Jw = [Jw,jac.Jf];
+        end
+    end
+end
