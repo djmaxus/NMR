@@ -1,7 +1,7 @@
 function [W] = buildFlowRes(X,D,bc,varargin)
     N = size(X,1);
     
-    if length(varargin) == 1
+    if length(varargin) >= 1
         nfa = varargin{1};
         mask = nfa.mask;
         approx = @(f)(nfa.eval(f));
