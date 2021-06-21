@@ -1,4 +1,4 @@
-function [] = plotSol(sol,where)
+function [] = plotSol(where,sol)
     %PLOTSOL Summary of this function goes here
     %   Detailed explanation goes here
     if isa(where,'matlab.ui.Figure')
@@ -20,13 +20,13 @@ function [] = plotSol(sol,where)
         ttl = '$u^0(x)$';
         title(sp1,ttl,'interpreter','latex');
         %% diffusion
-        
+
         plot(sp2,(0:Nx)./(Nx+1),sol.D.val);
         xlabel(sp2,'$x$','interpreter','latex');
         ylabel(sp2,'$D_0$','interpreter','latex');
         ttl = '$D_0(x)$';
         title(sp2,ttl,'interpreter','latex');
-        %% relative slices  
+        %% relative slices
         lgnd = cell(1,3);
         tidx = [2;round(length(sol.t)/2);length(sol.t)];
         for i = 1:length(tidx)
@@ -43,7 +43,7 @@ function [] = plotSol(sol,where)
     else
         plotSolFom(where,sol,Nx);
     end
-    
+
 end
 
 function plotSolFom(ax,sol,Nx)
@@ -52,9 +52,8 @@ function plotSolFom(ax,sol,Nx)
     ylim(ax,[0,1]);
     colorbar(ax);
     colormap(ax,'jet');
-    ttl = ['$',sol.name,', t_{CPU} = ',num2str(sol.timelog.overall),'$'];
-    title(ax,ttl,'interpreter','latex');
+%     ttl = ['$',sol.name,', t_{CPU} = ',num2str(sol.time.all),'$'];
+    title(ax,sol.problem.name,'interpreter','latex');
     xlabel(ax,'t');
     ylabel(ax,'x');
 end
-

@@ -1,67 +1,63 @@
-function [] = plotComp(sol_1,sol_2,D,fig)
+function [] = plotComp(fig,ref,sol)
     %PLOTCOMP Summary of this function goes here
     %   Detailed explanation goes here
-    %% rename
-    FOM = sol_1;
-    ROM = sol_2;
-    %% limits
-    Xmin = min([FOM.X,ROM.X],[],'all');
-    Xmax = max([FOM.X,ROM.X],[],'all');
-    %%
+
     clf(fig);
-    %% FOM
+
+    %% Reference
     f1 = subplot(2,3,1,axes(fig));
-    plotSol(FOM,f1);
-    %% ROM
+    plotSol(f1,ref);
+
+    %% Solution
     f2 = subplot(2,3,2,axes(fig));
-    plotSol(ROM,f2);
-    
-    %% error
-    x_rom = interp1(ROM.t,ROM.X',FOM.t)';
-    enum = (x_rom - FOM.X);
+    plotSol(f2,sol);
+
+    %% Difference
+    x_rom = interp1(sol.t,sol.X',ref.t)';
+    enum = (x_rom - ref.X);
     res = abs(enum);
-    
+
     sp3 = subplot(2,3,3,axes(fig));
-    Nx = size(FOM.X,1);
-    imagesc(sp3,'CData',res,'XData',FOM.t,'YData',(1:Nx)./Nx);
+    Nx = size(ref.X,1);
+    imagesc(sp3,'CData',res,'XData',ref.t,'YData',(1:Nx)./Nx);
     xlim(sp3,[0 1]);
     ylim(sp3,[0 1]);
     colorbar(sp3);
     colormap(sp3,'jet');
-    title(sp3,'$\Delta ROM$','interpreter','latex');
+    title(sp3,['$|\textrm{',sol.problem.name,'} - \textrm{',ref.problem.name,'}|$'],'interpreter','latex');
     xlabel(sp3,'t');
     ylabel(sp3,'x');
-    
-    
+
     %% Diffusion
-    sp4 = subplot(2,3,4,axes(fig));
-    plot(sp4,D.val(1:Nx),(1:Nx)./Nx);
-    ylim(sp4,[0,1]);
-    xlim(sp4,[0,max(D.val)]);
-    ylabel(sp4,'x');
-    xlabel(sp4,'$D_0$','interpreter','latex');
-    title(sp4,'Diffusion coefficient $D_0(x)$','interpreter','latex');
-    
-    
-    %% error dynamics
-    Nt = length(FOM.t)-1;
-    sp5 = subplot(2,3,5:6,axes(fig));
+%     sp4 = subplot(2,3,4,axes(fig));
+%     plot(sp4,D.val(1:Nx),(1:Nx)./Nx);
+%     ylim(sp4,[0,1]);
+%     xlim(sp4,[0,max(D.val)]);
+%     ylabel(sp4,'x');
+%     xlabel(sp4,'$D_0$','interpreter','latex');
+%     title(sp4,'Diffusion coefficient $D_0(x)$','interpreter','latex');
+
+    %% Dynamic difference
+    Nt = length(ref.t)-1;
+    sp5 = subplot(2,3,4:6,axes(fig));
     res = sqrt(mean(enum.^2,1));
     plot(sp5,(0:Nt)./(Nt),res);
     xlim(sp5,[0,1]);
     xlabel(sp5,'t');
     ylabel(sp5,'\Delta');
     title(sp5,'$$MSE(t)$$','interpreter','latex');
-    
-    spd.all = FOM.timelog.overall / ROM.timelog.overall;
-    spd.lin =  FOM.timelog.linsol / ROM.timelog.linsol;
-    spd.bld =  FOM.timelog.bld / ROM.timelog.bld;
-    spd.iter =  ROM.timelog.iters.bld_avg;
-    sms = ['ALL = ',num2str(spd.all),newline(),...
-           'LIN = ',num2str(spd.lin),newline(),...
-           'BLD = ',num2str(spd.bld),newline(),...
-           'ITR = ',num2str(spd.iter)];
-    disp(['----',fig.Name,newline(),sms,newline(),'----']);
-    figure(fig);
-end
 
+%     spd.all = 0;%FOM.time.all / ROM.time.all;
+%     spd.lin =  0;%FOM.time.solve / ROM.time.solve;
+%     spd.bld =  0;%FOM.time.build / ROM.time.build;
+%     spd.iter =  0;%ROM.iters_avg;
+%     sms = ['ALL = ',num2str(spd.all),newline(),...
+%            'LIN = ',num2str(spd.lin),newline(),...
+%            'BLD = ',num2str(spd.bld),newline(),...
+%            'ITR = ',num2str(spd.iter)];
+%     disp(['----',fig.Name,newline(),sms,newline(),'----']);
+
+    %% Focus
+    figure(fig);
+
+end
