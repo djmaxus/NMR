@@ -24,7 +24,7 @@ function [] = plotComp(fig,ref,sol)
     ylim(sp3,[0 1]);
     colorbar(sp3);
     colormap(sp3,'jet');
-    title(sp3,['$|\textrm{',sol.problem.name,'} - \textrm{',ref.problem.name,'}|$'],'interpreter','latex');
+    title(sp3,['$|\textrm{',sol.name,'} - \textrm{',ref.name,'}|$'],'interpreter','latex');
     xlabel(sp3,'t');
     ylabel(sp3,'x');
 

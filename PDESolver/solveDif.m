@@ -19,7 +19,7 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
 %     end
 
     %% Parameter save
-    sol.problem = problem;
+    sol = problem;
     
     %% timestep evaluation
     t = 0;

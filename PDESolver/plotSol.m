@@ -21,7 +21,7 @@ function [] = plotSol(where,sol)
         title(sp1,ttl,'interpreter','latex');
         %% diffusion
 
-        plot(sp2,(0:Nx)./(Nx+1),sol.problem.param.D.val);
+        plot(sp2,(0:Nx)./(Nx+1),sol.param.D.val);
         xlabel(sp2,'$x$','interpreter','latex');
         ylabel(sp2,'$D_0$','interpreter','latex');
         ttl = '$D_0(x)$';
@@ -53,7 +53,7 @@ function plotSolFom(ax,sol,Nx)
     colorbar(ax);
     colormap(ax,'jet');
 %     ttl = ['$',sol.name,', t_{CPU} = ',num2str(sol.time.all),'$'];
-    title(ax,sol.problem.name,'interpreter','latex');
+    title(ax,sol.name,'interpreter','latex');
     xlabel(ax,'t');
     ylabel(ax,'x');
 end
