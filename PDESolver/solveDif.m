@@ -99,8 +99,8 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
 %                 end
 %             end
             if (dt < dt_min)
-                warning(['Not converged',newline(),...
-                    'Relative residual: ', num2str(argout_nlin.err.rel_g)]);
+                warning(['Not converged']);
+                argout_nlin.err
                 break;
             end
             dt = dt/4;
