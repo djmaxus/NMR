@@ -65,7 +65,7 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
 
         %% Convergency check
         
-        if argout_nlin.is_conv
+        if argout_nlin.is_conv % if converged
             % solution update
             X(:,1) = argout_nlin.result;
             X(:,2) = argout_nlin.result;
@@ -91,7 +91,7 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
 
             % waitbar
             waitbar(t/T,wb,wb_msg);
-        elseif argout_nlin.iters >= argout_nlin.param.iters
+        else % if not converged
 %             if adaptive_fom
 %                 if (~is_step_fom)
 %                     is_step_fom = true;
@@ -111,11 +111,3 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
     sol.X(:,nstep+1:end) = [];
     delete(wb);
 end
-
-% function [out] = msg_add(is_fom)
-%     if is_fom
-%         out = 'FOM';
-%     else
-%         out = 'DEF';
-%     end
-% end
