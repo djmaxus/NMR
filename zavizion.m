@@ -21,8 +21,13 @@ newton_param = struct(...
     );
 nlin_newton = @(x,Res,Jac) newton(x,Res,Jac,newton_param);
 %% Gen dataset
-i0 = lhsdesign(10,3);
-for i = 1:size(x0,2)
-    problem_ = generate(x0(:,i));
+i0 = lhsdesign(10,3).*[1,1,1]+[1,1,0];
+for i = 1:size(i0,1)
+    problem_ = generate(i0(i,:));
     problem(i) = solveDif(T,Nt,problem_,nlin_newton);
+end
+%%
+mkdir('./zavizion');
+for i = 1:length(problem)
+    writematrix(problem(i).X,['./zavizion/X_',num2str(i),'.csv']);
 end
