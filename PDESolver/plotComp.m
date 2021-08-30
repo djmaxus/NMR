@@ -41,7 +41,7 @@ function [] = plotComp(fig,ref,sol)
     Nt = length(ref.t)-1;
     sp5 = subplot(2,3,4:6,axes(fig));
     res = sqrt(mean(enum.^2,1));
-    plot(sp5,(0:Nt)./(Nt),res);
+    semilogy(sp5,(0:Nt)./(Nt),res);
     xlim(sp5,[0,1]);
     xlabel(sp5,'t');
     ylabel(sp5,'\Delta');
