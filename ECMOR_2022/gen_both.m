@@ -3,7 +3,8 @@ function [res, jac, G] = gen_both(U,dt,params)
 %   Detailed explanation goes here
 
 %% both
-dx2 = params.dx2;
+dx = params.dx;
+dx2 = dx^2;
 
 Dw  = params.Dw;
 
@@ -25,7 +26,7 @@ Udt = @() U(2:end-1,:) * params.Dt; % time derivative
 W = @() -K * GG * Udx;
 
 %% inner residual
-res = dx2 * Udt() + dt * Dw * W() - dt * dx2 * q();
+res = dx2 * Udt() + dt * Dw * W() - dt * dx * q();
 
 %% jac use
 Dx = @() params.Dx;
