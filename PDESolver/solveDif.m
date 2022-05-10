@@ -2,6 +2,9 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     
+    %% function constants
+    timestep_inc = 2;
+    timestep_dec = 0.25;
     %% ROM mode processing
 %     adaptive_fom = false;
 %     is_step_fom = false;
@@ -40,30 +43,28 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
 
     %% dataset initialization
     sol.t = zeros(1,round(T/dt_min)+1);
-    sol.X = zeros(length(problem.x0),round(T/dt_min)+1);
+    sol.X = zeros(length(problem.x0),length(sol.t));
     sol.X(:,1) = x0;
 
-    %% solution process
+    %% solution
     wb_msg = ['Solving ODE: ',problem.name];
-    wb = waitbar(t,wb_msg,'WindowStyle','modal');
+    wb = waitbar(t, wb_msg, 'WindowStyle', 'modal');
     nstep = 1;
     while t < T
-        dt = min(dt, T-t);
+        dt = min([dt, T-t, dt_max]);
         if dt < 1e-16
             break;
         end
-        % initial approximation
-        X(:,2) = X(:,1);
+        
+        X(:,2) = X(:,1); % initial approximation
         
         Fun = @(x) problem.residual([X(:,1),x],dt);
         Jac = @(x) problem.jacobian([X(:,1),x],dt);
         
         % Nonlinear solver
-        [argout_nlin] = nlin_solver(X(:,2),Fun,Jac);
+        init_approx = @()X(:,2);
+        [argout_nlin] = nlin_solver(init_approx(),Fun,Jac);
         sol.nlin(nstep) = argout_nlin;
-        
-
-        %% Convergency check
         
         if argout_nlin.is_conv % if converged
             % solution update
@@ -76,8 +77,7 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
             
             % timestep increase
             if argout_nlin.iters <= argout_nlin.param.iters_min
-                dt =  dt * 2;
-                dt = min(dt,dt_max);
+                dt =  dt * timestep_inc;
             end
             
             % step type update
@@ -99,11 +99,11 @@ function [sol] = solveDif(T,Nt,problem,nlin_solver,varargin)
 %                 end
 %             end
             if (dt < dt_min)
-                warning(['Not converged']);
+                warning('Not converged');
                 argout_nlin.err
                 break;
             end
-            dt = dt/4;
+            dt = dt * timestep_dec;
         end
     end
 

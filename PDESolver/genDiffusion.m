@@ -1,11 +1,17 @@
 function [D] = genDiffusion(Nx,amp,per,scale,varargin)
     %SETDIFF Summary of this function goes here
     %   Detailed explanation goes here
+    
+    D.model = @(u)([1 + u.^2, 2*u]);
+    
     if length(varargin) == 1
         D.model = varargin{1};
-    else
-        D.model = @(u)([max(u.^2,0)+1,max(2*u,0)]);
     end
-    D.val = scale * (amp * sin(per*2*pi*(1:Nx+1)'./(Nx+1)) + 1);
+    
+    X = (0:Nx)'./ (Nx+1);
+    
+    circ = 2 * pi;
+    
+    D.val = scale * (amp * sin(per * circ * X) + 1);
 end
 

@@ -9,7 +9,7 @@ function [argout]=buildResidual(X,dt,param,varargin)
     Rx = W(2:Nx+1)-W(1:Nx);
     
     % source term
-    Rs = param.q.val;
+    Rs = param.q.val*Nx;
     R = Rt + Rx - Rs;
     
     % boundary law
