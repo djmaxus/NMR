@@ -1,5 +1,5 @@
 %% grid and operators
-Nx = 5; % inner points number
+Nx = 100; % inner points number
 dx = 1/Nx; % spatial resolution
 dx2 = dx^2;
 
@@ -15,11 +15,6 @@ Dx = Dxe(:,2:end-1); % (dw/dx)*dx over inner points
 
 msXe = movsum((1:Nxe)',2,'Endpoints','discard'); % indexing for upstream approximations
 
-Nt = 1;
-dt= 1/Nt;
-
-dtdx2 = dt * dx2;
-
 Odt = [-1;1]; % (du/dt)*dt
 Jdt = speye(Nx);
 
@@ -34,8 +29,12 @@ Gdf = @(u) 2*u;
 q = zeros(Nx,1);  % actuation
 
 %% conditions
-U = rand(Nxe,1) % initial/boundary conditions
-U = repmat(U,[1,2]);
+U0 = rand(Nxe,1) % initial/boundary conditions
+U = repmat(U0,[1,2]);
+
+%% dynamic timesteps
+Nt = 1;
+dt= 1/Nt;
 
 %% calculation
 
@@ -50,7 +49,7 @@ W = -K*GG*Udx; % nonlinear flow
 
 Udt = U(2:end-1,:) * Odt; % time derivative
 
-r = dx2*Udt + dt * Dw*W - dtdx2*q % inner resisual
+r = dx2*Udt + dt * Dw*W - dt*dx2*q % inner resisual
 
 dG = Gdf(U(:,2)); % nonlinear measurement derivative
 dG = sparse(diag(dG));
@@ -61,7 +60,16 @@ Jw = -K * (GG*Dx + Jg.*Udx); % flow jacobian
 
 J = dx2*Jdt + dt*Dw*Jw; % inner Jacobian
 
-full(J)
+%% params
+genK = @(Nx) speye(Nx+1);
+calcG = @(u)[1+u.^2,2*u];
+genQ = @(Nx) zeros(Nx,1);  % actuation
+genBC = @(Nx) U0;
+
+params = gen_params(Nx,genK,calcG,genQ,genBC);
+
+%% calc
+[res,jac] = gen_both(repmat(params.U0,[1,2]),1,params);
 
 
 
