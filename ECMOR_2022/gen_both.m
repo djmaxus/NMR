@@ -1,4 +1,4 @@
-function [res,jac] = gen_both(U,dt,params)
+function [res, jac, G] = gen_both(U,dt,params)
 %GEN_BOTH Summary of this function goes here
 %   Detailed explanation goes here
 
