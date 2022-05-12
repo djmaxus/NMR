@@ -1,7 +1,102 @@
-function [] = plotSol(where,sol)
+function [] = plotSol(where,sol, fontsize)
+    if isa(where,'matlab.ui.Figure')
+        clf(where);
+        fig = where;
+    elseif isa(where,'matlab.graphics.axis.Axes')
+        cla(where);
+        ax = where;
+    else
+        error('Whrere to plot, mate?');
+    end
+    
+    if(~exist('fig','var'))
+        error('No target figure');
+    end
+    
+    if nargin == 2
+        fontsize = 14;
+    end
+    
+    Nx = size(sol.X,1);
+    verts = linspace(0,1,Nx+2);
+    
+    label_settings = {'interpreter','latex'};
+    
+    sp1 = subplot(1,2,1,axes(fig));
+    hold(sp1, 'on');
+        yyaxis(sp1, 'left');
+            bound = [0,1];
+        
+            plot(sp1, bound, sol.param.bc.val,'s');
+        
+            U0 = sol.X(:,1);
+            plot(sp1, verts(2:end-1),U0,'-b');
+            
+            U05 = sol.X(:,round(length(sol.t)/2));
+            plot(sp1, verts(2:end-1),U05,'-g');
+            
+            U1 = sol.X(:,end);
+            plot(sp1, verts(2:end-1), U1,'-r');
+                  
+            xQ = xline(sp1,verts(sol.param.q.pos+1),'--',...
+                ['q = ',num2str(sol.param.q.val(sol.param.q.pos))]);
+            xQ.LabelOrientation = 'horizontal';
+            
+            ylabel(sp1, '$u$',label_settings{:});
+
+        yyaxis(sp1, 'right');
+            area(sp1, linspace(0,1,Nx+1),sol.param.D.val,'FaceColor','#999','LineStyle','none','FaceAlpha',0.5);
+            ylabel(sp1, '$\kappa$',label_settings{:});
+            ylim(sp1,[0,max(sol.param.D.val)]);
+
+        xlim(bound);
+        xlabel('$x$','interpreter','latex');
+        
+        leg = legend({'$u_\mathrm{B}$', ...
+                '$u(x,0)$', ...
+                '$u(x,\frac{1}{2})$',...
+                '$u(x,1)$',...
+                '$q$','$\kappa$'},label_settings{:});
+            
+        leg.Location = 'south';
+        leg.NumColumns = 3;
+        leg.Box = 'on';
+            
+        title(['Summary [',sol.name,']']);
+        
+    hold(sp1, 'off');
+    sp1.FontSize = fontsize;
+    axis(sp1,'square');
+    
+    sp2 = subplot(1,2,2,axes(fig));
+        Nt = length(sol.t);
+        mergeBC = @(ind) repmat(sol.param.bc.val(ind),[1,Nt]);
+        cdata = @() [mergeBC(1);sol.X;mergeBC(2)];
+        
+        imagesc(sp2,'CData',cdata(),'XData',sol.t,'YData', linspace(0,1,Nx+2),'Interpolation','bilinear');
+        
+        colorbar(sp2);
+        colormap(sp2,'jet');
+        
+        axis(sp2,'equal');
+        
+        xlim(sp2,[0,1]);
+        ylim(sp2,[0,1]);
+        
+        xlabel(sp2,'$t$',label_settings{:});
+        ylabel(sp2,'$x$',label_settings{:});
+
+        title(sp2, '$u(x,t)$', label_settings{:});
+        
+    sp2.FontSize = fontsize;
+
+end
+
+function [] = plotSol2(where,sol)
     %PLOTSOL Summary of this function goes here
     %   Detailed explanation goes here
-    if isa(where,'matlab.ui.Figure')
+
+        if isa(where,'matlab.ui.Figure')
         clf(where);
         sp1 = subplot(2,2,1,axes(where));
         sp2 = subplot(2,2,2,axes(where));
@@ -10,6 +105,8 @@ function [] = plotSol(where,sol)
         is_ext = true;
     elseif isa(where,'matlab.graphics.axis.Axes')
         is_ext = false;
+    else
+        error('Where to plot, mate?');
     end
     Nx = size(sol.X,1);
     if is_ext
