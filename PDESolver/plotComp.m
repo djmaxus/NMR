@@ -5,11 +5,11 @@ function [] = plotComp(fig,ref,sol)
     clf(fig);
 
     %% Reference
-    f1 = subplot(2,3,1,axes(fig));
+    f1 = subplot(1,3,1,axes(fig));
     plotSol(f1,ref);
 
     %% Solution
-    f2 = subplot(2,3,2,axes(fig));
+    f2 = subplot(1,3,2,axes(fig));
     plotSol(f2,sol);
 
     %% Difference
@@ -17,9 +17,10 @@ function [] = plotComp(fig,ref,sol)
     enum = (x_rom - ref.X);
     res = abs(enum);
 
-    sp3 = subplot(2,3,3,axes(fig));
+    sp3 = subplot(1,3,3,axes(fig));
     Nx = size(ref.X,1);
     imagesc(sp3,'CData',res,'XData',ref.t,'YData',(1:Nx)./Nx);
+    axis(sp3,'equal');
     xlim(sp3,[0 1]);
     ylim(sp3,[0 1]);
     colorbar(sp3);
@@ -27,6 +28,7 @@ function [] = plotComp(fig,ref,sol)
     title(sp3,['$|\textrm{',sol.name,'} - \textrm{',ref.name,'}|$'],'interpreter','latex');
     xlabel(sp3,'t');
     ylabel(sp3,'x');
+ 
 
     %% Diffusion
 %     sp4 = subplot(2,3,4,axes(fig));
@@ -38,14 +40,14 @@ function [] = plotComp(fig,ref,sol)
 %     title(sp4,'Diffusion coefficient $D_0(x)$','interpreter','latex');
 
     %% Dynamic difference
-    Nt = length(ref.t)-1;
-    sp5 = subplot(2,3,4:6,axes(fig));
-    res = sqrt(mean(enum.^2,1));
-    semilogy(sp5,(0:Nt)./(Nt),res);
-    xlim(sp5,[0,1]);
-    xlabel(sp5,'t');
-    ylabel(sp5,'\Delta');
-    title(sp5,'$$MSE(t)$$','interpreter','latex');
+%     Nt = length(ref.t)-1;
+%     sp5 = subplot(2,3,4:6,axes(fig));
+%     res = sqrt(mean(enum.^2,1));
+%     semilogy(sp5,(0:Nt)./(Nt),res);
+%     xlim(sp5,[0,1]);
+%     xlabel(sp5,'t');
+%     ylabel(sp5,'\Delta');
+%     title(sp5,'$$MSE(t)$$','interpreter','latex');
 
 %     spd.all = 0;%FOM.time.all / ROM.time.all;
 %     spd.lin =  0;%FOM.time.solve / ROM.time.solve;
