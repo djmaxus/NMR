@@ -29,7 +29,7 @@ Gdf = @(u) 2*u;
 q = zeros(Nx,1);  % actuation
 
 %% conditions
-U0 = rand(Nxe,1) % initial/boundary conditions
+U0 = rand(Nxe,1); % initial/boundary conditions
 U = repmat(U0,[1,2]);
 
 %% dynamic timesteps
@@ -49,7 +49,7 @@ W = -K*GG*Udx; % nonlinear flow
 
 Udt = U(2:end-1,:) * Odt; % time derivative
 
-r = dx2*Udt + dt * Dw*W - dt*dx2*q % inner resisual
+r = dx2*Udt + dt * Dw*W - dt*dx2*q; % inner resisual
 
 dG = Gdf(U(:,2)); % nonlinear measurement derivative
 dG = sparse(diag(dG));
