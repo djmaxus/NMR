@@ -1,16 +1,20 @@
-function [] = plotComp(fig,ref,sol)
+function [] = plotComp(fig,ref,sol,fontsize)
     %PLOTCOMP Summary of this function goes here
     %   Detailed explanation goes here
 
+    if nargin == 3
+        fontsize = 14;
+    end
+    
     clf(fig);
 
     %% Reference
     f1 = subplot(1,3,1,axes(fig));
-    plotSol(f1,ref);
+    plotSol(f1,ref, fontsize);
 
     %% Solution
     f2 = subplot(1,3,2,axes(fig));
-    plotSol(f2,sol);
+    plotSol(f2,sol, fontsize);
 
     %% Difference
     x_rom = interp1(sol.t,sol.X',ref.t)';
@@ -19,17 +23,9 @@ function [] = plotComp(fig,ref,sol)
 
     sp3 = subplot(1,3,3,axes(fig));
     Nx = size(ref.X,1);
-    imagesc(sp3,'CData',res,'XData',ref.t,'YData',(1:Nx)./Nx);
-    axis(sp3,'equal');
-    xlim(sp3,[0 1]);
-    ylim(sp3,[0 1]);
-    colorbar(sp3);
-    colormap(sp3,'jet');
-    title(sp3,['$|\textrm{',sol.name,'} - \textrm{',ref.name,'}|$'],'interpreter','latex');
-    xlabel(sp3,'t');
-    ylabel(sp3,'x');
+    plotField(sp3, res, ref.t, linspace(0,1,Nx),'Abs. difference',{});
  
-
+    sp3.FontSize = fontsize;
     %% Diffusion
 %     sp4 = subplot(2,3,4,axes(fig));
 %     plot(sp4,D.val(1:Nx),(1:Nx)./Nx);
@@ -59,7 +55,7 @@ function [] = plotComp(fig,ref,sol)
 %            'ITR = ',num2str(spd.iter)];
 %     disp(['----',fig.Name,newline(),sms,newline(),'----']);
 
-    %% Focus
+%% Focus
     figure(fig);
 
 end
