@@ -60,11 +60,11 @@ if plot_extended
     leg.NumColumns = 3;
     leg.Box = 'on';
     
-    title(['Summary [',sol.name,']']);
+    title(['Summary']);
     
     hold(sp1, 'off');
     sp1.FontSize = fontsize;
-    axis(sp1,'square');
+%     axis(sp1,'equal');
     
     sp2 = subplot(1,2,2,axes(fig));
 else
@@ -75,20 +75,7 @@ Nt = length(sol.t);
 mergeBC = @(ind) repmat(sol.param.bc.val(ind),[1,Nt]);
 cdata = @() [mergeBC(1);sol.X;mergeBC(2)];
 
-imagesc(sp2,'CData',cdata(),'XData',sol.t,'YData', linspace(0,1,Nx+2),'Interpolation','bilinear');
-
-colorbar(sp2);
-colormap(sp2,'jet');
-
-axis(sp2,'equal');
-
-xlim(sp2,[0,1]);
-ylim(sp2,[0,1]);
-
-xlabel(sp2,'$t$',label_settings{:});
-ylabel(sp2,'$x$',label_settings{:});
-
-title(sp2, '$u(x,t)$', label_settings{:});
+plotField(sp2, cdata(), sol.t, linspace(0,1,Nx+2),sol.name,{});
 
 sp2.FontSize = fontsize;
 
