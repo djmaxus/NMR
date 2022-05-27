@@ -23,7 +23,7 @@ function [] = plotComp(fig,ref,sol,fontsize)
 
     sp3 = subplot(1,3,3,axes(fig));
     Nx = size(ref.X,1);
-    plotField(sp3, res, ref.t, linspace(0,1,Nx),'Abs. difference',{});
+    plotField(sp3, res, ref.t, linspace(0,1,Nx),['Absolute', newline(), 'difference'],{});
  
     sp3.FontSize = fontsize;
     %% Diffusion

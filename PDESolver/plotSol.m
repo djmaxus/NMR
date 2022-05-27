@@ -64,7 +64,7 @@ if plot_extended
     
     hold(sp1, 'off');
     sp1.FontSize = fontsize;
-%     axis(sp1,'equal');
+    axis(sp1,'square');
     
     sp2 = subplot(1,2,2,axes(fig));
 else
