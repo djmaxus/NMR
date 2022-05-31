@@ -1,32 +1,32 @@
 function [] = plotComp(fig,ref,sol,fontsize)
-    %PLOTCOMP Summary of this function goes here
-    %   Detailed explanation goes here
+%PLOTCOMP Summary of this function goes here
+%   Detailed explanation goes here
 
-    if nargin == 3
-        fontsize = 14;
-    end
-    
-    clf(fig);
+if nargin == 3
+    fontsize = 14;
+end
 
-    %% Reference
-    f1 = subplot(1,3,1,axes(fig));
-    plotSol(f1,ref, fontsize);
+clf(fig);
 
-    %% Solution
-    f2 = subplot(1,3,2,axes(fig));
-    plotSol(f2,sol, fontsize);
+%% Reference
+f1 = subplot(2,3,1,axes(fig));
+plotSol(f1,ref, fontsize);
 
-    %% Difference
-    x_rom = interp1(sol.t,sol.X',ref.t)';
-    enum = (x_rom - ref.X);
-    res = abs(enum);
+%% Solution
+f2 = subplot(2,3,2,axes(fig));
+plotSol(f2,sol, fontsize);
 
-    sp3 = subplot(1,3,3,axes(fig));
-    Nx = size(ref.X,1);
-    plotField(sp3, res, ref.t, linspace(0,1,Nx),['Absolute', newline(), 'difference'],{});
- 
-    sp3.FontSize = fontsize;
-    %% Diffusion
+%% Difference
+x_rom = interp1(sol.t,sol.X',ref.t)';
+enum = (x_rom - ref.X);
+res = abs(enum);
+
+sp3 = subplot(2,3,3,axes(fig));
+Nx = size(ref.X,1);
+plotField(sp3, res, ref.t, linspace(0,1,Nx),['Absolute', newline(), 'difference'],{});
+
+sp3.FontSize = fontsize;
+%% Diffusion
 %     sp4 = subplot(2,3,4,axes(fig));
 %     plot(sp4,D.val(1:Nx),(1:Nx)./Nx);
 %     ylim(sp4,[0,1]);
@@ -35,7 +35,7 @@ function [] = plotComp(fig,ref,sol,fontsize)
 %     xlabel(sp4,'$D_0$','interpreter','latex');
 %     title(sp4,'Diffusion coefficient $D_0(x)$','interpreter','latex');
 
-    %% Dynamic difference
+%% Dynamic difference
 %     Nt = length(ref.t)-1;
 %     sp5 = subplot(2,3,4:6,axes(fig));
 %     res = sqrt(mean(enum.^2,1));
@@ -55,7 +55,33 @@ function [] = plotComp(fig,ref,sol,fontsize)
 %            'ITR = ',num2str(spd.iter)];
 %     disp(['----',fig.Name,newline(),sms,newline(),'----']);
 
-%% Focus
-    figure(fig);
 
+%% comparative performace
+sp2 = subplot(2,3,4:6,axes(fig));
+
+categories = {'linear problem','LSPG projection','nonlinear functions','overall'};
+cat_array = categorical(categories);
+cat_array = reordercats(cat_array,categories);
+
+spd = calcSpeedUp(sol,ref);
+
+perf_data = [spd.ref.solve, spd.sol.solve;...
+    spd.ref.proj,  spd.sol.proj;...
+    spd.ref.build, spd.sol.build;...
+    spd.ref.all,   spd.sol.all  ];
+
+bar(sp2, cat_array, perf_data);
+
+set(sp2, 'YScale', 'log');
+
+ylabel(sp2, 'Time [seconds]');
+
+title(sp2, 'Comparative performace');
+
+sp2.FontSize = fontsize;
+
+legend(sp2, {ref.name, sol.name},'Location',"best");
+
+%% Focus
+figure(fig);
 end
