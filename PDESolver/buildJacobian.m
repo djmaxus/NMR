@@ -5,7 +5,11 @@ function [argout] = buildJacobian(X,dt,param,varargin)
     Jt = speye(Nx)./dt;
     
     % spatial part
-    [Jf] = buildFlowJac(X,param.D,param.bc,varargin{:});
+    evalTime = tic;
+        Jf = buildFlowJac(X,param.D,param.bc,varargin{:}); 
+    evalTime = toc(evalTime);
+    argout.time = evalTime;
+    
     Jx = spalloc(Nx,Nx,3*Nx-2);
     Jxb = sparse(Nx,2);
     for i=1:Nx

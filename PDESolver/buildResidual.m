@@ -5,7 +5,11 @@ function [argout]=buildResidual(X,dt,param,varargin)
     Rt = (X(:,2)-X(:,1))./dt;
     
     % spatial part
-    W = buildFlowRes(X,param.D,param.bc,varargin{:});
+    evalTime = tic;
+        W = buildFlowRes(X,param.D,param.bc,varargin{:});
+    evalTime = toc(evalTime);
+    argout.time = evalTime;
+    
     Rx = W(2:Nx+1)-W(1:Nx);
     
     % source term
