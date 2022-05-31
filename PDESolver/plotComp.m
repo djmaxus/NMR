@@ -70,13 +70,22 @@ perf_data = [spd.ref.solve, spd.sol.solve;...
     spd.ref.build, spd.sol.build;...
     spd.ref.all,   spd.sol.all  ];
 
-bar(sp2, cat_array, perf_data);
+b = bar(sp2, cat_array, perf_data);
 
 set(sp2, 'YScale', 'log');
-
 ylabel(sp2, 'Time [seconds]');
+title(sp2, 'Relative performace');
 
-title(sp2, 'Comparative performace');
+for i = 1:2
+xtips_i = b(i).XEndPoints;
+
+ytips_i = b(i).YEndPoints;
+
+labels_i = split(num2str(b(i).YData,'% .2g'));
+
+text(xtips_i,ytips_i,labels_i,'HorizontalAlignment','center',...
+    'VerticalAlignment','bottom');
+end
 
 sp2.FontSize = fontsize;
 
