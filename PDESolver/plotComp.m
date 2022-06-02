@@ -24,7 +24,8 @@ res = abs(enum);
 sp3 = subplot(2,3,3,axes(fig));
 Nx = size(ref.X,1);
 plotField(sp3, res, ref.t, linspace(0,1,Nx),['Absolute', newline(), 'difference'],{});
-
+set(sp3,'ColorScale','log');
+colormap(sp3,'parula');
 sp3.FontSize = fontsize;
 %% Diffusion
 %     sp4 = subplot(2,3,4,axes(fig));
