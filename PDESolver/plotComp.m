@@ -1,22 +1,19 @@
-function [] = plotComp(fig,ref,sol,fontsize)
+function [] = plotComp(fig,ref,sol)
 %PLOTCOMP Summary of this function goes here
 %   Detailed explanation goes here
 
-if nargin == 3
-    fontsize = 12;
-end
-
 clf(fig);
 
-
-t = tiledlayout(2,3,'TileSpacing','tight');
+tiledlayout(2,3,'TileSpacing','tight');
 %% Reference
 f1 = nexttile;
-plotSol(f1,ref, fontsize);
+plotSol(f1,ref);
+title(f1,ref.name,'interpreter','none');
 
 %% Solution
 f2 = nexttile;
-plotSol(f2,sol, fontsize);
+plotSol(f2,sol);
+title(f2,sol.name,'interpreter','none');
 
 %% Difference
 x_rom = interp1(sol.t,sol.X',ref.t)';
@@ -28,7 +25,6 @@ Nx = size(ref.X,1);
 plotField(sp3, res, ref.t, linspace(0,1,Nx),['Absolute', newline(), 'difference'],{});
 set(sp3,'ColorScale','log');
 colormap(sp3,'parula');
-sp3.FontSize = fontsize;
 %% Diffusion
 %     sp4 = subplot(2,3,4,axes(fig));
 %     plot(sp4,D.val(1:Nx),(1:Nx)./Nx);
@@ -65,7 +61,7 @@ sp2 = nexttile;
 % sp2.Layout.Tile = 4;
 sp2.Layout.TileSpan = [1 3];
 
-categories = {'linear problem','LSPG projection','nonlinear functions','overall'};
+categories = {'linear solve','LSPG','nonlinearity','total'};
 cat_array = categorical(categories);
 cat_array = reordercats(cat_array,categories);
 
@@ -93,9 +89,9 @@ text(xtips_i,ytips_i,labels_i,'HorizontalAlignment','center',...
     'VerticalAlignment','bottom');
 end
 
-sp2.FontSize = fontsize;
-
 legend(sp2, {ref.name, sol.name},'Location',"best");
+
+%% dimensionality reduction summary
 
 %% Focus
 figure(fig);
