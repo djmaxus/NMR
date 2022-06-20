@@ -1,4 +1,4 @@
-function [] = plotSol(where,sol, fontsize)
+function [] = plotSol(where,sol)
 plot_extended = false;
 if isa(where,'matlab.ui.Figure')
     clf(where);
@@ -10,63 +10,17 @@ else
     error('Whrere to plot, mate?');
 end
 
-if nargin == 2
-    fontsize = 14;
-end
-
-Nx = size(sol.X,1);
+Nx = sol.Nx;
 verts = linspace(0,1,Nx+2);
 
 label_settings = {'interpreter','latex'};
 
 if plot_extended
-    sp1 = subplot(1,2,1,axes(fig));
-    hold(sp1, 'on');
-    yyaxis(sp1, 'left');
-    bound = [0,1];
+    t = tiledlayout(1,2,'TileSpacing','tight');
+    sp1 = nexttile;
+    sp1 = plotProblem(sp1,sol);
     
-    plot(sp1, bound, sol.param.bc.val,'s');
-    
-    U0 = sol.X(:,1);
-    plot(sp1, verts(2:end-1),U0,'-b');
-    
-    U05 = sol.X(:,round(length(sol.t)/2));
-    plot(sp1, verts(2:end-1),U05,'-g');
-    
-    U1 = sol.X(:,end);
-    plot(sp1, verts(2:end-1), U1,'-r');
-    
-    xQ = xline(sp1,verts(sol.param.q.pos+1),'--',...
-        ['q = ',num2str(sol.param.q.val(sol.param.q.pos))]);
-    xQ.LabelOrientation = 'horizontal';
-    
-    ylabel(sp1, '$u$',label_settings{:});
-    
-    yyaxis(sp1, 'right');
-    area(sp1, linspace(0,1,Nx+1),sol.param.D.val,'FaceColor','#999','LineStyle','none','FaceAlpha',0.5);
-    ylabel(sp1, '$\kappa$',label_settings{:});
-    ylim(sp1,[0,max(sol.param.D.val)]);
-    
-    xlim(bound);
-    xlabel('$x$','interpreter','latex');
-    
-    leg = legend({'$u_\mathrm{B}$', ...
-        '$u(x,0)$', ...
-        '$u(x,\frac{1}{2})$',...
-        '$u(x,1)$',...
-        '$q$','$\kappa$'},label_settings{:});
-    
-    leg.Location = 'south';
-    leg.NumColumns = 3;
-    leg.Box = 'on';
-    
-    title(['Summary']);
-    
-    hold(sp1, 'off');
-    sp1.FontSize = fontsize;
-    axis(sp1,'square');
-    
-    sp2 = subplot(1,2,2,axes(fig));
+    sp2 = nexttile;
 else
     sp2 = where;
 end
@@ -75,9 +29,7 @@ Nt = length(sol.t);
 mergeBC = @(ind) repmat(sol.param.bc.val(ind),[1,Nt]);
 cdata = @() [mergeBC(1);sol.X;mergeBC(2)];
 
-plotField(sp2, cdata(), sol.t, linspace(0,1,Nx+2),sol.name,{});
-
-sp2.FontSize = fontsize;
+plotField(sp2, cdata(), sol.t, linspace(0,1,Nx+2),'$u(x,t)$',{'interpreter','latex'});
 
 end
 
