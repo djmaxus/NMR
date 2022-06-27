@@ -1,10 +1,15 @@
-function [] = plotComp(fig,ref,sol)
+function [] = plotComp(fig,ref,sol,skip_performance)
 %PLOTCOMP Summary of this function goes here
 %   Detailed explanation goes here
 
+if nargin < 4
+    skip_performance = false;
+end
+num_rows = 1 + ~skip_performance;
+
 clf(fig);
 
-tiledlayout(2,3,'TileSpacing','tight');
+tiledlayout(num_rows,3,'TileSpacing','tight');
 %% Reference
 f1 = nexttile;
 plotSol(f1,ref);
@@ -56,6 +61,7 @@ colormap(sp3,'parula');
 
 
 %% comparative performace
+if ~skip_performance
 sp2 = nexttile;
 % sp2 = axes(t);
 % sp2.Layout.Tile = 4;
@@ -90,8 +96,7 @@ text(xtips_i,ytips_i,labels_i,'HorizontalAlignment','center',...
 end
 
 legend(sp2, {ref.name, sol.name},'Location',"best");
-
-%% dimensionality reduction summary
+end
 
 %% Focus
 figure(fig);
