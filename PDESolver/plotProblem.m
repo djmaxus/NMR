@@ -48,7 +48,7 @@ axis(ax,'square');
 xlabel('$$x$$',interpreter_latex{:});
 
 leg = legend({'$$u_\mathrm{B}$$', '$$u(x,0)$$', '$$q$$', '$$\kappa$$'},interpreter_latex{:});
-leg.Location = 'south';
+leg.Location = 'southoutside';
 leg.NumColumns = 3;
 leg.Box = 'on';
 
