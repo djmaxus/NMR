@@ -82,7 +82,7 @@ b = bar(sp2, cat_array, perf_data);
 
 set(sp2, 'YScale', 'log');
 ylabel(sp2, 'Time [seconds]');
-title(sp2, 'Performace');
+title(sp2, 'Performance');
 
 for i = 1:2
 xtips_i = b(i).XEndPoints;
@@ -179,7 +179,7 @@ b = bar(sp2, cat_array, perf_data);
 
 set(sp2, 'YScale', 'log');
 ylabel(sp2, 'Time [seconds]');
-title(sp2, 'Relative performace');
+title(sp2, 'Relative performance');
 
 for i = 1:2
 xtips_i = b(i).XEndPoints;
