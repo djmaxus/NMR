@@ -13,12 +13,12 @@ tiledlayout(num_rows,3,'TileSpacing','tight');
 %% Reference
 f1 = nexttile;
 plotSol(f1,ref);
-title(f1,ref.name,'interpreter','none');
+title(f1,ref.name,'interpreter','tex');
 
 %% Solution
 f2 = nexttile;
 plotSol(f2,sol);
-title(f2,sol.name,'interpreter','none');
+title(f2,sol.name,'interpreter','tex');
 
 %% Difference
 x_rom = interp1(sol.t,sol.X',ref.t)';
@@ -82,7 +82,7 @@ b = bar(sp2, cat_array, perf_data);
 
 set(sp2, 'YScale', 'log');
 ylabel(sp2, 'Time [seconds]');
-title(sp2, 'Relative performace');
+title(sp2, 'Performace');
 
 for i = 1:2
 xtips_i = b(i).XEndPoints;

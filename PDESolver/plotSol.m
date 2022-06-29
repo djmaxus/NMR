@@ -11,14 +11,11 @@ else
 end
 
 Nx = sol.Nx;
-verts = linspace(0,1,Nx+2);
-
-label_settings = {'interpreter','latex'};
 
 if plot_extended
-    t = tiledlayout(1,2,'TileSpacing','tight');
+    tiledlayout(1,2,'TileSpacing','tight');
     sp1 = nexttile;
-    sp1 = plotProblem(sp1,sol);
+    plotProblem(sp1,sol);
     
     sp2 = nexttile;
 else

@@ -1,4 +1,4 @@
-function [ax] = plotProblem(ax,sol)
+function [ax, leg] = plotProblem(ax,sol)
 %PLOTPROBLEM Summary of this function goes here
 %   Detailed explanation goes here
 cla(ax);
@@ -49,7 +49,7 @@ xlabel('$$x$$',interpreter_latex{:});
 
 leg = legend({'$$u_\mathrm{B}$$', '$$u(x,0)$$', '$$q$$', '$$\kappa$$'},interpreter_latex{:});
 leg.Location = 'southoutside';
-leg.NumColumns = 3;
+leg.NumColumns = 4;
 leg.Box = 'on';
 
 title(ax, 'Problem parameters');
