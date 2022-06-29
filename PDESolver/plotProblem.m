@@ -27,6 +27,8 @@ q_val = sol.param.q.val(q_pos);
 q_label = ['$$q = ',num2str(q_val),'$$',newline(),'$$x_q = ',num2str(q_pos/Nx),'$$'];
 xQ = xline(ax,cell_coords(q_pos),'--', q_label, interpreter_latex{:});
 xQ.LabelOrientation = 'horizontal';
+xQ.LabelVerticalAlignment = 'middle';
+xQ.LabelHorizontalAlignment = 'center';
 
 %% kappa
 kappa = sol.param.D.val;
