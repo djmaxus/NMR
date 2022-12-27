@@ -37,7 +37,7 @@ sp_dfdu = [[sp_dfdu(:,1);0],[0;sp_dfdu(:,2)]];
 sp_dfdudx = conv2(sp_dfdu,ddx');
 sp_dfdudx = [sp_dfdudx(1:Nu,1),sp_dfdudx((1:Nu)+1,2),sp_dfdudx((1:Nu)+2,3)];
 
-jacobian = sparse(repmat(1:Nu,1,3),[1:Nu,(1:Nu)+1,(1:Nu)+2],...
+jacobian = sparse(repmat((1:Nu)+1,1,3),[1:Nu,(1:Nu)+1,(1:Nu)+2],...
     [sp_dfdudx(:,1),sp_dfdudx(:,2),sp_dfdudx(:,3)],...
     Nu_all,Nu_all);
 
@@ -45,4 +45,3 @@ jacobian(2:end-1,2:end-1) = jacobian(2:end-1,2:end-1) + j_dudt;
 jacobian(1,1) = 1;
 jacobian(end,end) = 1;
 end
-
