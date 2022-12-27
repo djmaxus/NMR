@@ -1,18 +1,18 @@
-function [sol] = newton_iterations(calc_linear,initial,tolerance,max_iters)
+function [sol,iter] = newton_iterations(calc_linear,initial,tolerance,max_iters)
 
 % set initial approximation
 current = initial;
 delta = Inf(size(current));
 
 % launch loop
-for i = 0:max_iters
+for iter = 0:max_iters
     [residual, jacobian] = calc_linear(current);
     
     % calculate errors
     err_abs = norm(residual) / sqrt(length(residual));
     
     % memorize initials
-    if i == 0
+    if iter == 0
         err_initial = err_abs;
     end
     
@@ -43,7 +43,6 @@ if is_conv_any
 else
     sol = [];
 end
-
 end
 
 function [delta_j] = verify_jacobian(calc_linearization,u0)
