@@ -29,7 +29,7 @@ for iter = 0:max_iters
     is_conv_any = is_conv_abs || is_conv_rel || is_conv_delta;
     
     % is_conv_any
-    if and(is_conv_any, iter > 0)
+    if and(is_conv_any, iter >= max_iters)
         break;
     end
     

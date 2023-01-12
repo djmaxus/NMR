@@ -16,17 +16,24 @@ fom.plot_problem();
 
 Nt = Nf;
 
+%%
 tic;
 [sol] = ode_solve(@fom.calc_linearization,fom.u0,Nt,true);
 toc
 
-fom.plot_solution(); 
+fom.plot_solution();
 
 %% POD builder
 tic;
 builder_pod = BuilderPOD(sol.U, fom.u0);
 toc
 
-%% POd encoder
+%% POD encoder
 
 [builder_pod,encoder_pod] = builder_pod.set_energy_residual(1e-3).build_encoder();
+
+%% ROM-I
+
+tic;
+[sol_encoded] = ode_solve_encoded(@fom.calc_linearization,fom.u0,Nt,true,encoder_pod);
+toc
