@@ -1,4 +1,4 @@
-classdef FOM
+classdef MRST_FOM
     %COSTOBJECT Summary of this class goes here
     %   Detailed explanation goes here
 
