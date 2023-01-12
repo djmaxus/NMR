@@ -1,3 +1,4 @@
 addpath(genpath('../POD'));
 addpath(genpath('./'));
-definitions;
+
+new_figure = @(name)(figure('Name',name,'WindowStyle','docked'));
