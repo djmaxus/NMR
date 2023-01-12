@@ -1,44 +1,57 @@
-function [U,timesteps] = ode_solve(calc_linearization,u0,Nt,use_wb)
+function [sol] = ode_solve(calc_linearization,u0,Nt,use_wb)
+
 if use_wb
     wb = waitbar(0, 'Solving ODE');
 end
 
+sol.U = zeros(length(u0),Nt+1);
+sol.U(:,1) = u0;
+
 t = 0;
-U = u0;
-timesteps = t;
+sol.timesteps = zeros(1,Nt+1);
+sol.timesteps(1) = t;
 
 dt0 = 1/Nt;
+dt_max = dt0;
+dt = dt0;
+dt_min = dt0;
+timestep_dec = 0.25;
+
+n = 1;
 while t < 1
-    dt_max = dt0;
-    dt = min([dt0, 1-t, dt_max]);
+
+    dt = min([dt, 1-t, dt_max, dt0]);
     if dt < 1e-16
         break;
     end
     
-    [u, iters] = ode_step(calc_linearization,U(:,end),dt);
-    
+    u_prev = sol.U(:,n);
+    calc_linear_for_newton = @(u) calc_linearization(u_prev,dt,u);
+    [u, iters] = newton_iterations(calc_linear_for_newton,u_prev,1e-3,10);
+
     is_converged = ~isempty(u);
-    
+
     if ~is_converged
-        dt_min = dt0;
         if (dt < dt_min)
             warning('Not converged');
             break;
         end
-        timestep_dec = 0.25;
+
         dt = dt * timestep_dec;
         continue;
     end
-    
+
     t = t+dt;
-    
-    U = [U,u];
-    timesteps = [timesteps,t];
-    
+    n = n + 1;
+
+    sol.U(:,n) = u;
+    sol.timesteps(n) = t;
+
     if iters < 3
         timestep_inc = 1;
         dt =  dt * timestep_inc;
     end
+
     if use_wb
         waitbar(t,wb);
     end
@@ -46,9 +59,4 @@ end
 if use_wb
     delete(wb);
 end
-end
-
-function [u,iters] = ode_step(calc_linearization,u0,dt)
-calc_linear_for_newton = @(u) calc_linearization(u0,dt,u);
-[u, iters] = newton_iterations(calc_linear_for_newton,u0,1e-3,10);
 end
