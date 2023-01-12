@@ -8,10 +8,7 @@ classdef BuilderPOD
         s;
         v;
         
-        time_decomposition;
-        
         rk;
-        en;
     end
     
     methods
@@ -19,9 +16,7 @@ classdef BuilderPOD
             obj.data = data;
             obj.shift = shift;
             
-            tic;
             [obj.u, s, obj.v] = svd(data - shift,'econ');
-            obj.time_decomposition = toc
             
             obj.s = diag(s);   
         end

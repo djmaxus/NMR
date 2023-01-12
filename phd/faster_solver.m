@@ -7,7 +7,7 @@ gen_q_pos = @(k) (-4)^(k) * (rand()-0.5)^(2*k+1)+0.5;
 
 gen_kappa = @(Nf) genField(Nf, 2e-3, 2e-4, param_gen_h, param_gen_clx);
 
-Nf = 2^11;
+Nf = 2^10;
 Nu = Nf + 1;
 
 fom = FOM(Nu,1,1,gen_initial, gen_kappa,struct('pos',gen_q_pos(2),'value',1.0));
@@ -23,8 +23,9 @@ toc
 fom.plot_solution(); 
 
 %% POD builder
-
+tic;
 builder_pod = BuilderPOD(sol.U, fom.u0);
+toc
 
 %% POd encoder
 
