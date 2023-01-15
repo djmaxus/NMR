@@ -17,7 +17,7 @@ classdef FOM
     end
     
     methods
-        function obj = FOM(Nu, ul, ur, gen_initial, gen_kappa, source)
+        function obj = FOM(Nu, ul, ur, gen_initial, gen_kappa, source, calc_g)
             Nu = max([Nu,3]);
             Nf = Nu - 1;
             obj.dx = Nf^(-1);
@@ -35,8 +35,8 @@ classdef FOM
             obj.q = sparse(pos,1,source.value / obj.dx, Nu, 1);
         end
         
-        function [residual, jacobian] = calc_linearization(obj,u0,dt,u)
-            [residual, jacobian] = pde_linearization(u0, dt, u, obj.dx, obj.ul, obj.ur, obj.kappa, obj.q, obj.calc_g);
+        function [residual, jacobian, data] = calc_linearization(obj,u0,dt,u)
+            [residual, jacobian, data] = pde_linearization(u0, dt, u, obj.dx, obj.ul, obj.ur, obj.kappa, obj.q, obj.calc_g);
         end
         
         function plot_problem(obj,ax)
