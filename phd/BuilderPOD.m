@@ -1,4 +1,4 @@
-classdef BuilderPOD
+classdef BuilderPOD < handle
     
     properties
         data;
@@ -8,7 +8,12 @@ classdef BuilderPOD
         s;
         v;
         
-        rk;
+        rk (1,1) = 0;
+        
+        gappy_mask (1,:) {mustBeInteger, mustBePositive};
+        gappy_projection (:,:) {sparse};
+        
+        mask_extension(1,:) {mustBeInteger, mustBePositive} = [];
     end
     
     methods
@@ -18,7 +23,7 @@ classdef BuilderPOD
             
             [obj.u, s, obj.v] = svd(data - shift,'econ');
             
-            obj.s = diag(s);   
+            obj.s = diag(s);
         end
         
         function [obj] = set_rank(obj,rk)
@@ -46,9 +51,54 @@ classdef BuilderPOD
             obj = obj.set_energy_residual(1 - energy);
         end
         
-        function [obj,encoder] = build_encoder(obj)
+        function [obj] = set_lower_bound(obj,lower_bound)
+            obj.set_rank(max([obj.rk,lower_bound]));
+        end
+        
+        function [encoder, obj] = build_encoder(obj)
             encoder = EncoderUnitary(obj.u(:,1:obj.rk),obj.shift);
+        end
+        
+        function [obj] = set_gappy_mask(obj,increase_factor)
+            arguments
+                obj (1,1) BuilderPOD
+                increase_factor (1,1) {mustBeReal,mustBePositive} = 1;
+            end
+            increase_factor = max(increase_factor,1);
+            mask_size = ceil(increase_factor * obj.rk);
+            [obj.gappy_mask] = calc_gappy_mask(obj.u,mask_size);
+            obj.mask_extension = [];
+        end
+        
+        function [obj] = set_mask_extension(obj, indices)
+            arguments
+                obj (1,1) BuilderPOD
+                indices (1,:) {mustBeInteger, mustBePositive}
+            end
+            
+            max_index = size(obj.data,1);
+            indices = min(indices,max_index);
+            indices = max(indices,1);
+            obj.mask_extension = [obj.mask_extension, indices];
+        end
+        
+        function [obj] = set_mask_extension_normalized(obj, range)
+            arguments
+                obj (1,1) BuilderPOD
+                range (1,:) double
+            end
+            
+            a = (size(obj.data,1) - 1);
+            range = a .* range + 0.5; % make it from [0.5,N-0.5]
+            range = ceil(range); % shift it from [1,N]
+            obj.mask_extension = [obj.mask_extension, range];
+        end
+        
+        function [encoder_gappy, obj] = build_gappy(obj)
+            encoder_pod = obj.build_encoder();
+            gappy_mask_compound = unique([obj.gappy_mask,obj.mask_extension]);
+            [~,gappy_decode_matrix] = oblique_projector(gappy_mask_compound,encoder_pod.decoding_transform);
+            encoder_gappy = EncoderGappy(gappy_decode_matrix,encoder_pod.shift,gappy_mask_compound);
         end
     end
 end
-
