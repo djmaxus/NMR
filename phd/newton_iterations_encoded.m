@@ -1,14 +1,25 @@
-function [sol,iter] = newton_iterations_encoded(calc_linear,initial,tolerance,max_iters, linear_encoder)
-check_class(linear_encoder,'EncoderLinear');
+function [sol,iter, data] = newton_iterations_encoded(calc_linear,initial,tolerance,max_iters, linear_encoder)
+arguments
+    calc_linear (1,1)
+    initial (:,1) {mustBeReal}
+    tolerance (1,1) {mustBeReal, mustBeNonnegative}
+    max_iters (1,1) {mustBeInteger, mustBePositive}
+    linear_encoder (1,1) {mustBeA(linear_encoder,'EncoderLinear')}
+end
+
 jacobian_decoder = linear_encoder.decode_jacobian();
 
 % set initial approximation
 current = initial;
-delta = Inf(size(current));
+delta_encoded = Inf(size(linear_encoder.dim_latent()));
+
+data = cell(1,max_iters + 1);
 
 % launch loop
 for iter = 0:max_iters
-    [residual, jacobian] = calc_linear(current);
+    [residual, jacobian, data_iter] = calc_linear(current);
+    
+    data{iter+1} = data_iter;
     
     jac_encoded = jacobian * jacobian_decoder;
     res_ls = jac_encoded' * residual;
@@ -29,7 +40,7 @@ for iter = 0:max_iters
     err_rel = err_abs / err_initial;
     err_rel_ls = err_abs_ls / err_initial_ls;
     
-    err_delta = norm(delta) / sqrt(length(delta));
+    err_delta = norm(delta_encoded) / sqrt(length(delta_encoded));
     
     % Newton convergence
     is_conv_abs = err_abs < tolerance;
