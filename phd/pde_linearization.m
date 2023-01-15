@@ -1,4 +1,4 @@
-function [residual, jacobian] = pde_linearization(u0,dt,u,dx,ul,ur,kappa,q, calc_g)
+function [residual, jacobian, g] = pde_linearization(u0,dt,u,dx,ul,ur,kappa,q, calc_g)
 ddx = [-1;1]/dx;
 dudx = conv(u,flip(ddx),'valid');
 
