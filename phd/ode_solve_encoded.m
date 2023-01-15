@@ -11,6 +11,9 @@ t = 0;
 sol.timesteps = zeros(1,Nt+1);
 sol.timesteps(1) = t;
 
+max_iter = 10;
+sol.data = cell(Nt,max_iter+1);
+
 dt0 = 1/Nt;
 dt_max = dt0;
 dt = dt0;
@@ -27,8 +30,10 @@ while t < 1
     
     u_prev = sol.U(:,n);
     calc_linear_for_newton = @(u) calc_linearization(u_prev,dt,u);
-    [u, iters] = newton_iterations_encoded(calc_linear_for_newton,u_prev,1e-3,10,encoder);
-
+    [u, iters,data_step] = newton_iterations_encoded(calc_linear_for_newton,u_prev,1e-3,max_iter,encoder);
+    
+    sol.data(n,:) = data_step;
+    
     is_converged = ~isempty(u);
 
     if ~is_converged
@@ -40,13 +45,13 @@ while t < 1
         dt = dt * timestep_dec;
         continue;
     end
-
+    
     t = t+dt;
     n = n + 1;
 
     sol.U(:,n) = u;
     sol.timesteps(n) = t;
-
+    
     if iters < 3
         timestep_inc = 1;
         dt =  dt * timestep_inc;
