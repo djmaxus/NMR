@@ -85,7 +85,9 @@ u = sol_encoded.U(:,end);
 
 t = 0;
 t_gappy = 0;
-for i = 1:1
+wb = waitbar(0);
+n_repeat = 1;
+for i = 1:n_repeat
     tic;
     g = calc_g_full(u);
     t = toc() + t;
@@ -93,16 +95,12 @@ for i = 1:1
     tic;
     g_gappy = calc_g_gappy(u);
     t_gappy = toc() + t_gappy;
+    
+    wb = waitbar(i/n_repeat);
 end
+close(wb);
 
 disp(t_gappy/t);
 
-%% ROM-II
-
-rom_approx = fom;
-fom.calc_g = calc_g_gappy;
-
-tic;
-[sol_gappy] = ode_solve_encoded(@rom_approx.calc_linearization,rom_approx.u0,Nt,true,encoder_pod);
-toc
+%% Gappy for derivative
 
