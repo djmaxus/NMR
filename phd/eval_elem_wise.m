@@ -9,6 +9,7 @@ out = zeros(length(mask),1);
 
 for index = 1:length(mask)
     out(index) = func(arg, mask(index));
+    pause(1e-13);
 end
 
 end
