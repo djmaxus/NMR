@@ -33,17 +33,19 @@ classdef FOM
             
             pos = max(min(round( (Nu-1)*source.pos + 1 ), Nu-1), 2);
             obj.q = sparse(pos,1,source.value / obj.dx, Nu, 1);
+            
+            obj.calc_g = calc_g;
         end
         
         function [residual, jacobian, data] = calc_linearization(obj,u0,dt,u)
             [residual, jacobian, data] = pde_linearization(u0, dt, u, obj.dx, obj.ul, obj.ur, obj.kappa, obj.q, obj.calc_g);
         end
         
-        function plot_problem(obj,ax)
+        function obj = plot_problem(obj,ax)
             todo(); % plotProblem(axes(figure),FOM_test);
         end
         
-        function plot_solution(obj,where)
+        function obj = plot_solution(obj,fig)
             todo(); % plotSol(figure(),FOM_test);
         end
     end
