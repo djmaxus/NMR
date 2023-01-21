@@ -4,7 +4,11 @@ arguments
     initial (:,1) {mustBeReal}
     tolerance (1,1) {mustBeReal, mustBeNonnegative}
     max_iters (1,1) {mustBeInteger, mustBePositive}
-    linear_encoder (1,1) {mustBeA(linear_encoder,'EncoderLinear')}
+    linear_encoder {mustBeA(linear_encoder,'EncoderLinear'), mustBeScalarOrEmpty}
+end
+
+if isempty(linear_encoder)
+    error("empty linear_encoder");
 end
 
 jacobian_decoder = linear_encoder.decode_jacobian();
