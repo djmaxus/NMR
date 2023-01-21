@@ -7,7 +7,7 @@ Nf = Nu_all-1;
 sign_dudx = dudx > 0;
 upstream_index = (1:Nf)' + sign_dudx;
 g = calc_g(u);
-g_upstream = g(upstream_index,1);
+g_upstream = g{1}(upstream_index);
 
 f = -kappa .* g_upstream .* dudx;
 dfdx = conv(f,flip(ddx),'valid');
@@ -23,7 +23,7 @@ residual = residual - q;
 
 j_dudt = 1/dt;
 
-dgdu = g(:,2);
+dgdu = g{2};
 dgdu_diag = sparse(1:length(dgdu),1:length(dgdu),dgdu);
 dgdu_upstream = dgdu_diag(upstream_index,:);
 
