@@ -7,25 +7,22 @@ gen_q_pos = @(k) (-4)^(k) * (rand()-0.5)^(2*k+1)+0.5;
 
 gen_kappa = @(Nf) genField(Nf, 2e-3, 2e-4, param_gen_h, param_gen_clx);
 
-Nf = 2^10;
+Nf = 2^11;
 Nu = Nf + 1;
 
-calc_g_all = @(u) [1 + 0.5 * u.^2, u];
+calc_g = @(u, mask) {1 + 0.5 * u(mask).^2, u(mask)};
 
-calc_g = @(u, elem) (1 + 0.5 * u(elem)^2);
-calc_dg = @(u) u;
-
-calc_g_full = @(u) eval_elem_wise(calc_g,u,1:Nu);
-
-fom = FOM(Nu,1,1,gen_initial, gen_kappa,struct('pos',gen_q_pos(2),'value',1.0), calc_g_all);
+fom = FOM(Nu,1,1,gen_initial, gen_kappa,struct('pos',gen_q_pos(2),'value',1.0), @(u) calc_g(u,1:Nu));
 
 fom.plot_problem();
 
-Nt = Nf;
+Nt = round(Nf);
 
 %%
+encoder_ident = EncoderLinear(1,0);
+
 tic;
-[sol] = ode_solve(@fom.calc_linearization,fom.u0,Nt,true);
+[sol] = ode_solve_encoded(@fom.calc_linearization,fom.u0,Nt,true,encoder_ident);
 toc
 
 fom.plot_solution();
@@ -40,19 +37,18 @@ toc
 encoder_pod = builder_pod.set_energy_residual(1e-3).build_encoder();
 
 %% ROM-I
-
 tic;
 [sol_encoded] = ode_solve_encoded(@fom.calc_linearization,fom.u0,Nt,true,encoder_pod);
 toc
 
 %% Nonlinear data & Gappy builder
 
-G = zeros(size(sol_encoded.data{1},1),numel(sol_encoded.data));
-dG = G;
+G = zeros(size(sol_encoded.data{1}{1},1),numel(sol_encoded.data));
+dG = zeros(size(sol_encoded.data{2}{1},1),numel(sol_encoded.data));
 
 for i = 1:numel(sol_encoded.data)
-    G(:,i) = sol_encoded.data{i}(:,1);
-    dG(:,i) = sol_encoded.data{i}(:,2);
+    G(:,i) = sol_encoded.data{i}{1};
+    dG(:,i) = sol_encoded.data{i}{2};
 end
 
 tic;
@@ -71,36 +67,33 @@ for builder = [builder_gappy,builder_gappy_dg]
         .set_mask_extension(find(fom.q));
 end
 
-%% Setup Gappy Decoder
+%% merge masks
+
+common_gappy_mask = [builder_gappy.gappy_mask, builder_gappy_dg.gappy_mask];
+common_gappy_mask = unique(common_gappy_mask);
+
+for builder = [builder_gappy,builder_gappy_dg]
+    builder.set_mask_extension(common_gappy_mask);
+end
+
+%% Setup Gappy encoder
 
 encoder_gappy = builder_gappy.build_gappy();
+encoder_gappy_dg = builder_gappy_dg.build_gappy();
 
-calc_g_full_gappy = @(u) eval_elem_wise(calc_g,u,encoder_gappy.gappy_mask);
+encoder_gappy_compound = EncoderCombined({encoder_gappy, encoder_gappy_dg});
 
-calc_g_gappy = @(u) encoder_gappy.eval_gappy(calc_g_full_gappy,u);
+%% gappy nonlinear function
 
-%%
+gappy_mask_compound = encoder_gappy.gappy_mask;
+calc_g_gappy = @(u) calc_g(u,gappy_mask_compound);
+calc_g_approx = @(u) encoder_gappy_compound.decode(calc_g_gappy(u));
 
-u = sol_encoded.U(:,end);
+rom_ii = fom;
+rom_ii.calc_g = calc_g_approx;
 
-t = 0;
-t_gappy = 0;
-wb = waitbar(0);
-n_repeat = 1;
-for i = 1:n_repeat
-    tic;
-    g = calc_g_full(u);
-    t = toc() + t;
-    
-    tic;
-    g_gappy = calc_g_gappy(u);
-    t_gappy = toc() + t_gappy;
-    
-    wb = waitbar(i/n_repeat);
-end
-close(wb);
-
-disp(t_gappy/t);
-
-%% Gappy for derivative
+%% ROM-II
+tic;
+[sol_gappy] = ode_solve_encoded(@rom_ii.calc_linearization,rom_ii.u0,Nt,true,encoder_pod);
+toc
 
