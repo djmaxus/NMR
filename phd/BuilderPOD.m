@@ -79,7 +79,7 @@ classdef BuilderPOD < handle
             max_index = size(obj.data,1);
             indices = min(indices,max_index);
             indices = max(indices,1);
-            obj.mask_extension = [obj.mask_extension, indices];
+            obj.mask_extension = unique([obj.mask_extension, indices]);
         end
         
         function [obj] = set_mask_extension_normalized(obj, range)
