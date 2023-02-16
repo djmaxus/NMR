@@ -28,7 +28,7 @@ classdef BuilderPOD < handle
         
         function [obj] = set_rank(obj,rk)
             rk = ceil(rk);
-            max_rank = size(obj.data, 2);
+            max_rank = size(obj.u, 2);
             obj.rk = max(min(rk,max_rank),1);
         end
         
@@ -57,6 +57,11 @@ classdef BuilderPOD < handle
         
         function [encoder, obj] = build_encoder(obj)
             encoder = EncoderUnitary(obj.u(:,1:obj.rk),obj.shift);
+        end
+        
+        function [encoder, obj] = build_encoder_scaled(obj)
+            u_scaled = obj.u(:,1:obj.rk).*obj.s(1:obj.rk)';
+            encoder = EncoderLinear(u_scaled,obj.shift);
         end
         
         function [obj] = set_gappy_mask(obj,increase_factor)
