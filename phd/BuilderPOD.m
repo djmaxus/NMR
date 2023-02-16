@@ -8,6 +8,8 @@ classdef BuilderPOD < handle
         s;
         v;
         
+        w;
+        
         rk (1,1) = 0;
         
         gappy_mask (1,:) {mustBeInteger, mustBePositive};
@@ -23,7 +25,13 @@ classdef BuilderPOD < handle
             
             [obj.u, s, obj.v] = svd(data - shift,'econ');
             
-            obj.s = diag(s);
+            variance = sqrt(var(data,1,'all'));
+            obj.w = norm(shift) + abs(variance);
+            
+            s = diag(s);
+            s = s./(size(data,2)-1);
+            
+            obj.s = s;
         end
         
         function [obj] = set_rank(obj,rk)
@@ -60,7 +68,7 @@ classdef BuilderPOD < handle
         end
         
         function [encoder, obj] = build_encoder_scaled(obj)
-            u_scaled = obj.u(:,1:obj.rk).*obj.s(1:obj.rk)';
+            u_scaled = obj.u(:,1:obj.rk).*obj.w;
             encoder = EncoderLinear(u_scaled,obj.shift);
         end
         
